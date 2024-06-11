@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<LangVersion>12.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Version>1.0.0.4</Version>
+		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+		<AssemblyName>EditorJsonToHtmlConverter</AssemblyName>
+		<RootNamespace>EditorJsonToHtmlConverter</RootNamespace>
+		<Authors>kibblewhite &lt;kibblewhite@live.com&gt;</Authors>
+		<Description>A library that can convert Editor JS JSON into HTML.</Description>
+		<PackageTags>editorjs;blazor;blazor-editorjs;editorjs-blazor</PackageTags>
+		<PackageIcon>editorjs.png</PackageIcon>
+		<ApplicationIcon>editorjs.ico</ApplicationIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<IsPackable>true</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<SupportedPlatform Include="browser" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="wwwroot\" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Content Include="README.md" Pack="true" PackagePath="">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="LICENSE" Pack="true" PackagePath="">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="editorjs.ico" Pack="true" PackagePath="">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="editorjs.png" Pack="true" PackagePath="">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+</Project>
