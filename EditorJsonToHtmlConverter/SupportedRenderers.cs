@@ -1,5 +1,9 @@
 ﻿namespace EditorJsonToHtmlConverter;
 
+/// <summary>
+/// List of supported block types from Editor JS
+/// </summary>
+/// <remarks>This is used by the <see cref="EjsRenderFragment.RenderBlock(EditorJsonToHtmlConverter.CustomRenderTreeBuilder, EditorJsBlock)"/> internal method.</remarks>
 public enum SupportedRenderers
 {
     [StringValue(nameof(Paragraph))]

@@ -1,26 +1,33 @@
 namespace EditorJsonToHtmlConverter;
 
+/// <summary>
+/// A Razor component that converts JSON output from the EditorJS block editor into a Blazor RenderFragment.
+/// </summary>
 public partial class EjsRenderFragment : ComponentBase
 {
     /// <summary>
-    /// 
+    /// Gets or sets the content to be rendered inside the component.
     /// </summary>
     [Parameter]
     public required RenderFragment ChildContent { get; set; }
 
     /// <summary>
     /// Gets or sets the JSON output from the EditorJS block editor.
-    /// This JSON string is used to generate a segment of UI content.
     /// </summary>
+    /// <remarks>This JSON string is used to generate a segment of UI content.</remarks>
     [Parameter]
     public required string Value { get; set; }
 
     /// <summary>
-    /// 
+    /// Gets or sets the JSON string that defines the styling map for the EditorJS blocks.
     /// </summary>
+    /// <remarks>This JSON string is used to apply styles to the UI content.</remarks>
     [Parameter]
     public required string StylingMap { get; set; } = "[]";
 
+    /// <summary>
+    /// Gets or sets the logger instance used for logging within the component.
+    /// </summary>
     [Inject]
     public required ILogger<EjsRenderFragment> logger { get; init; }
 
@@ -30,6 +37,9 @@ public partial class EjsRenderFragment : ComponentBase
         StateHasChanged();
     }
 
+    /// <summary>
+    /// Converts the JSON input into a RenderFragment for rendering in the Blazor component.
+    /// </summary>
     private RenderFragment ConvertJsonToRenderFragment => builder =>
     {
 
@@ -70,6 +80,11 @@ public partial class EjsRenderFragment : ComponentBase
         }
     };
 
+    /// <summary>
+    /// Renders a single EditorJS block using the appropriate renderer based on the block type.
+    /// </summary>
+    /// <param name="render_tree_builder">The custom render tree builder used for rendering.</param>
+    /// <param name="block">The EditorJS block to render.</param>
     internal static void RenderBlock(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
         if (Enum.TryParse(block.Type, true, out SupportedRenderers renderer) is false)

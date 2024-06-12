@@ -12,7 +12,7 @@ public class CustomRenderTreeBuilder
     private int _sequence_count = 0;
 
     /// <summary>
-    /// Use this to get the current <see cref="SequenceCount"/> without changing it's value
+    /// Use this to get the current <see cref="SequenceCounter"/> without changing it's value
     /// </summary>
     public int GetSequenceCount => _sequence_count;
 }

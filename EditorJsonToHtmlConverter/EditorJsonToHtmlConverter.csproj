@@ -5,7 +5,7 @@
 		<LangVersion>12.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Version>1.0.0.6</Version>
+		<Version>1.0.0.7</Version>
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
 		<AssemblyName>EditorJsonToHtmlConverter</AssemblyName>
 		<RootNamespace>EditorJsonToHtmlConverter</RootNamespace>
@@ -17,6 +17,8 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn Label="EditorJsonToHtmlConverter.xml">CS1591</NoWarn>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<IsPackable>true</IsPackable>
 	</PropertyGroup>
