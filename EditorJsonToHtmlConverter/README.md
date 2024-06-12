@@ -1,5 +1,17 @@
 # EditorJsonProcessor
 
+Add service(s) to DI container if required:
+
+```csharp
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScopedEditorJsonProcessorServices();
+```
+
+This will add both of the following into the service collection:
+- `Microsoft.AspNetCore.Components.Web.HtmlRenderer`
+- `EditorJsonToHtmlConverter.EjsHtmlRenderer` 
+
+
 ## Usage:
 
 ```csharp
