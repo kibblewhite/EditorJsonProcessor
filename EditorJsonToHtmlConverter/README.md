@@ -199,6 +199,7 @@ HtmlRootComponent html_root_component = await EjsHtmlRenderer.ParseAsHtmlRootCom
         }
     },
     {
+        "id": "zOGADPv7kl",
         "type": "image",
         "data": {
         "url": "https://www.tesla.com/tesla_theme/assets/img/_vehicle_redesign/roadster_and_semi/roadster/hero.jpg",
@@ -209,10 +210,12 @@ HtmlRootComponent html_root_component = await EjsHtmlRenderer.ParseAsHtmlRootCom
         }
     },
     {
+        "id": "zOGFDv7kl",
         "type" : "delimiter",
         "data" : {}
     },
     {
+        "id": "zOUIDPv7kl",
         "type": "warning",
         "data": {
         "title": "Note:",
@@ -220,10 +223,12 @@ HtmlRootComponent html_root_component = await EjsHtmlRenderer.ParseAsHtmlRootCom
         }
     },
     {
+        "id": "zOJKDPv7kl",
         "type" : "delimiter",
         "data" : {}
     },
     {
+        "id": "zUKNDPv7kl",
         "type" : "embed",
         "data" : {
         "service" : "coub",
