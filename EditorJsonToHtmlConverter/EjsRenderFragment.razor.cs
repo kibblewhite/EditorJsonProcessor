@@ -31,10 +31,30 @@ public partial class EjsRenderFragment : ComponentBase
     [Inject]
     public required ILogger<EjsRenderFragment> logger { get; init; }
 
+    /// <summary>
+    /// Indicates whether the component's child's render fragment has been built.
+    /// </summary>
+    /// <remarks>
+    /// Once the component has had it's render fragment built, it cannot be updated or amended at this time.
+    /// </remarks>
+    protected bool ChildRenderFragmentBuilt;
+
     protected override void OnInitialized()
+        => BuildChildRenderFragment();
+
+    protected override void OnAfterRender(bool first_render)
+        => BuildChildRenderFragment();
+
+    private void BuildChildRenderFragment()
     {
+        if (ChildRenderFragmentBuilt is true || string.IsNullOrWhiteSpace(Value))
+        {
+            return;
+        }
+
         ChildContent = new(ConvertJsonToRenderFragment);
         StateHasChanged();
+        ChildRenderFragmentBuilt = true;
     }
 
     /// <summary>
@@ -42,7 +62,6 @@ public partial class EjsRenderFragment : ComponentBase
     /// </summary>
     private RenderFragment ConvertJsonToRenderFragment => builder =>
     {
-
         EditorJsBlocks? blocks;
         IEnumerable<EditorJsStylingMap>? editor_js_styling_map;
 

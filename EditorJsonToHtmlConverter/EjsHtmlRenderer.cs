@@ -4,20 +4,32 @@
 /// Renders the EjsRenderFragment component as HTML using a provided HtmlRenderer.
 /// </summary>
 /// <param name="html_renderer">The HtmlRenderer instance used to render the components.</param>
-public sealed class EjsHtmlRenderer(HtmlRenderer html_renderer)
+public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer)
 {
     private readonly HtmlRenderer _html_renderer = html_renderer;
+
+    [GeneratedRegex(@"</?.+?>")]
+    private static partial Regex StripHtmlRegex();
 
     /// <summary>
     /// Parses the given JSON value and optional styling map to generate the corresponding HTML string.
     /// </summary>
     /// <param name="value">The JSON output from the EditorJS block editor.</param>
+    /// <param name="strip_html">When true, this will perform a basic stripping of HTML based on regular expression matching on the returning string value.</param>
     /// <param name="styling_map">The JSON string representing the styling map. Default is an empty array.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the generated HTML string.</returns>
-    public async Task<string> ParseAsync(string value, string? styling_map = "[]")
+    public async Task<string> ParseAsync(string value, bool strip_html = false, string? styling_map = "[]")
     {
         ParameterView parameters = BuildParameters(value, styling_map);
-        return await RenderComponentAsHtmlAsync<EjsRenderFragment>(parameters);
+        string fragment = await RenderComponentAsHtmlAsync<EjsRenderFragment>(parameters);
+
+        if (strip_html is false)
+        {
+            return fragment;
+        }
+
+        Regex tags_expression = StripHtmlRegex();
+        return tags_expression.Replace(fragment, string.Empty);
     }
 
     /// <summary>
