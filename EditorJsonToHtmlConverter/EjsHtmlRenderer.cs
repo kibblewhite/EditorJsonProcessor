@@ -29,7 +29,8 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer)
         }
 
         Regex tags_expression = StripHtmlRegex();
-        return tags_expression.Replace(fragment, string.Empty);
+        string striped_fragement = tags_expression.Replace(fragment, string.Empty);
+        return WebUtility.HtmlDecode(striped_fragement);
     }
 
     /// <summary>
