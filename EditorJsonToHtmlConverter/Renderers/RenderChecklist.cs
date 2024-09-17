@@ -25,7 +25,7 @@ public sealed class RenderChecklist : IBlockRenderer
         foreach (EditorJsBlockContent item in items)
         {
             render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "li");
-            render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "role", "checkbox");
+            render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "aria-hidden", "true");
 
             if (css is not null && css.ItemStyle is not null)
             {
@@ -36,6 +36,7 @@ public sealed class RenderChecklist : IBlockRenderer
             render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "input");
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "type", "checkbox");
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "disabled", "true");
+
             if (item.Checked ?? false)
             {
                 render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "checked", "checked");
