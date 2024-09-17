@@ -234,4 +234,65 @@
     public static readonly string ExpectedEditorHtmlValue = """
         !!! <i>He</i>y<b>lo, W</b>orld! <a href="https://google.com">Link</a> !!!<h1 id="KgrM3aNM-n"><mark class="cdx-marker"><a href="http://google.com">Heylo</a></mark></h1><p id="NaTtEbbeRT">Heylo World</p><h3 id="KgrM3aNM-n">Second header</h3><ol id="QdqCFpKBAm"><li>A: One<ul><li>B: Two<ul></ul></li></ul></li><li>A: Three<ul><li>B: Four<ul><li>C: Five<ul></ul></li></ul></li><li>B: Six<ul></ul></li><li>B: Seven<ul></ul></li></ul></li></ol><blockquote id="m-onbmz6BZ" class="text-left">Ohhh interesting...<footer>by Me!</footer></blockquote><p id="ZatOSzA754">dsf<i>sfa</i><b>sfasdfs</b>dffasd</p><ul id="SWrBNzvp6A"><li>dwdw</li><li>wedwed</li><li>wedw</li></ul><ul id="yD5ZHUxF1N" role="group" style="list-style-type: none;"><li role="checkbox"><input type="checkbox" disabled="true" />Check List Item One</li><li role="checkbox"><input type="checkbox" disabled="true" checked="checked" />Check List Item Two</li><li role="checkbox"><input type="checkbox" disabled="true" />Check List Item Three</li></ul><hr id="J5I_aD9c8j" /><table id="J-7FqxXppm"><thead><tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr></thead><tbody><tr><td>qwerty</td><td>as<b>dfg</b>h</td><td>zxc<mark class="cdx-marker">vbn</mark></td></tr><tr><td>AAA</td><td><a href="https://google.com/">BBB</a></td><td><code class="inline-code">CCC</code></td></tr></tbody></table><table id="zOGIbPv7kl"><tbody><tr><td>A1</td><td>B1</td></tr><tr><td>A2</td><td>B2</td></tr></tbody></table><img id="zOGADPv7kl" src="https://www.tesla.com/tesla_theme/assets/img/_vehicle_redesign/roadster_and_semi/roadster/hero.jpg" alt="Roadster // tesla.com" style="border: 1px solid #ddd; width: 100%;" /><p style="text-align: center;">Roadster // tesla.com</p><hr id="zOGFDv7kl" /><div id="zOUIDPv7kl"><strong>Note:</strong><p>Avoid using this method just for lulz. It can be very dangerous opposite your daily fun stuff.</p></div><hr id="zOJKDPv7kl" /><div id="zUKNDPv7kl"><iframe src="https://coub.com/embed/1czcdf" width="100%" height="320" style="margin: 0 auto;" frameborder="0" allowfullscreen="true"></iframe></div><p>My Life</p>
         """;
+
+    public static readonly string ExpectedEditorHtmlWithStylingsValue = """
+        !!! <i>He</i>y<b>lo, W</b>orld! <a href="https://google.com">Link</a> !!!<h1 id="KgrM3aNM-n" class="specific-style-1"><mark class="cdx-marker"><a href="http://google.com">Heylo</a></mark></h1><p id="NaTtEbbeRT" class="specific-style-p">Heylo World</p><h3 id="KgrM3aNM-n" class="general-style-3">Second header</h3><ol id="QdqCFpKBAm" class="list-group list-group-flush"><li class="list-group-item">A: One<ul><li>B: Two<ul></ul></li></ul></li><li class="list-group-item">A: Three<ul><li>B: Four<ul><li>C: Five<ul></ul></li></ul></li><li>B: Six<ul></ul></li><li>B: Seven<ul></ul></li></ul></li></ol><blockquote id="m-onbmz6BZ" class="text-left blockquote">Ohhh interesting...<footer class="blockquote-footer">by Me!</footer></blockquote><p id="ZatOSzA754" class="specific-style-p">dsf<i>sfa</i><b>sfasdfs</b>dffasd</p><ul id="SWrBNzvp6A" class="list-group list-group-flush"><li class="list-group-item">dwdw</li><li class="list-group-item">wedwed</li><li class="list-group-item">wedw</li></ul><ul id="yD5ZHUxF1N" role="group" style="list-style-type: none;" class="list-group"><li aria-hidden="true" class="list-group-item"><input type="checkbox" disabled="true" />Check List Item One</li><li aria-hidden="true" class="list-group-item"><input type="checkbox" disabled="true" checked="checked" />Check List Item Two</li><li aria-hidden="true" class="list-group-item"><input type="checkbox" disabled="true" />Check List Item Three</li></ul><hr id="J5I_aD9c8j" /><table id="J-7FqxXppm" class="table table-hover"><thead><tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr></thead><tbody><tr><td>qwerty</td><td>as<b>dfg</b>h</td><td>zxc<mark class="cdx-marker">vbn</mark></td></tr><tr><td>AAA</td><td><a href="https://google.com/">BBB</a></td><td><code class="inline-code">CCC</code></td></tr></tbody></table><table id="zOGIbPv7kl" class="table table-hover"><tbody><tr><td>A1</td><td>B1</td></tr><tr><td>A2</td><td>B2</td></tr></tbody></table><img id="zOGADPv7kl" class="img-fluid" src="https://www.tesla.com/tesla_theme/assets/img/_vehicle_redesign/roadster_and_semi/roadster/hero.jpg" alt="Roadster // tesla.com" style="border: 1px solid #ddd; width: 100%;" /><p style="text-align: center;">Roadster // tesla.com</p><hr id="zOGFDv7kl" /><div id="zOUIDPv7kl"><strong>Note:</strong><p>Avoid using this method just for lulz. It can be very dangerous opposite your daily fun stuff.</p></div><hr id="zOJKDPv7kl" /><div id="zUKNDPv7kl"><iframe src="https://coub.com/embed/1czcdf" width="100%" height="320" style="margin: 0 auto;" frameborder="0" allowfullscreen="true"></iframe></div><p>My Life</p>
+        """;
+
+    public static readonly string StylingMap = """
+        [
+            {
+                "type": "header",
+                "level": 1,
+                "style": "specific-style-1"
+            },
+            {
+                "type": "header",
+                "level": 2,
+                "style": "general-style-2"
+            },
+            {
+                "type": "header",
+                "level": 3,
+                "style": "general-style-3"
+            },
+            {
+                "type": "header",
+                "level": 4,
+                "style": "general-style-4"
+            },
+            {
+                "type": "header",
+                "level": 5,
+                "style": "general-style-5"
+            },
+            {
+                "type": "paragraph",
+                "style": "specific-style-p"
+            },
+            {
+                "type": "list",
+                "style": "list-group list-group-flush",
+                "item-style": "list-group-item"
+            },
+            {
+                "type": "checklist",
+                "style": "list-group",
+                "item-style": "list-group-item"
+            },
+            {
+                "type": "quote",
+                "style": "blockquote",
+                "footer-style": "blockquote-footer"
+            },
+            {
+                "type": "table",
+                "style": "table table-hover"
+            },
+            {
+                "type": "image",
+                "style": "img-fluid"
+            }
+        ]
+        """;
 }

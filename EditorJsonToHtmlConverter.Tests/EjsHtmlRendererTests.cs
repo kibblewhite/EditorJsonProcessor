@@ -40,6 +40,22 @@ public class EjsHtmlRendererTests
     }
 
     [TestMethod]
+    public async Task ParseAsync_ReturnsCorrectHtml_WithStylingMap_ForValidJson()
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // Arrange
+        string json_value = EjsRenderFragmentTestsHelpers.EditorJsonValue;
+        string expected_html = EjsRenderFragmentTestsHelpers.ExpectedEditorHtmlWithStylingsValue;
+
+        // Act
+        string result = await _ejs_html_renderer.ParseAsync(json_value, false, EjsRenderFragmentTestsHelpers.StylingMap);
+
+        // Assert
+        Assert.IsTrue(result.Contains(expected_html));
+    }
+
+    [TestMethod]
     public async Task ParseAsync_ReturnsEmptyHtml_ForEmptyJson()
     {
         ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
