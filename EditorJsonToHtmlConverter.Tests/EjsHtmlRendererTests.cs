@@ -30,7 +30,7 @@ public class EjsHtmlRendererTests
 
         // Arrange
         string json_value = EjsRenderFragmentTestsHelpers.EditorJsonValue;
-        string expected_html = EjsRenderFragmentTestsHelpers.EditorHtmlValue;
+        string expected_html = EjsRenderFragmentTestsHelpers.ExpectedEditorHtmlValue;
 
         // Act
         string result = await _ejs_html_renderer.ParseAsync(json_value);

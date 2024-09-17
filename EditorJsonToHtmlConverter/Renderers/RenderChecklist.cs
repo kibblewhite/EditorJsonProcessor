@@ -11,6 +11,7 @@ public sealed class RenderChecklist : IBlockRenderer
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "ul");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "id", id);
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "role", "group");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "style", "list-style-type: none;");
 
         EditorJsStylingMap? css = render_tree_builder.StylingMap.FirstOrDefault(item => item.Type == SupportedRenderers.Checklist && item.Id == id);
@@ -24,6 +25,7 @@ public sealed class RenderChecklist : IBlockRenderer
         foreach (EditorJsBlockContent item in items)
         {
             render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "li");
+            render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "role", "checkbox");
 
             if (css is not null && css.ItemStyle is not null)
             {
