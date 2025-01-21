@@ -3,8 +3,11 @@
 /// <summary>
 /// Represents the data associated with an Editor.js block.
 /// </summary>
-public sealed class EditorJsBlockData
+public sealed class EditorJsBlockData : IEditorJsEntity<EditorJsBlockData>
 {
+    [JsonIgnore]
+    public static EditorJsBlockData Empty => new();
+
     /// <summary>
     /// Gets or sets the text content for various block types like paragraphs and quotes.
     /// </summary>

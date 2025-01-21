@@ -1,7 +1,14 @@
 ﻿namespace EditorJsonToHtmlConverter.Models;
 
-public sealed class EditorJsStylingMap
+public sealed class EditorJsStylingMap : IEditorJsEntity<EditorJsStylingMap>
 {
+    [JsonIgnore]
+    public static EditorJsStylingMap Empty => new()
+    {
+        Type = SupportedRenderers.Empty,
+        Style = string.Empty
+    };
+
     [JsonPropertyName("type")]
     [JsonConverter(typeof(SupportedRenderersConverter))]
     public required SupportedRenderers Type { get; init; }

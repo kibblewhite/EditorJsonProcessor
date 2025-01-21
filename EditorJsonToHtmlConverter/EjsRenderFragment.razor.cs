@@ -29,7 +29,7 @@ public partial class EjsRenderFragment : ComponentBase
     /// Gets or sets the logger instance used for logging within the component.
     /// </summary>
     [Inject]
-    public required ILogger<EjsRenderFragment> logger { get; init; }
+    public required ILogger<EjsRenderFragment> Logger { get; init; }
 
     /// <summary>
     /// Indicates whether the component's child's render fragment has been built.
@@ -62,7 +62,7 @@ public partial class EjsRenderFragment : ComponentBase
     /// </summary>
     private RenderFragment ConvertJsonToRenderFragment => builder =>
     {
-        EditorJsBlocks? blocks;
+        EditorJsBlocks? blocks = null;
         IEnumerable<EditorJsStylingMap>? editor_js_styling_map;
 
         try
@@ -72,7 +72,7 @@ public partial class EjsRenderFragment : ComponentBase
         }
         catch (Exception ex)
         {
-            logger.LogTrace("Deserialise EditorJsBlocks Failed: {Exception}", ex.Message);
+            Logger.LogError("Deserialise EditorJsBlocks Failed: {Exception}", ex.Message);
             throw;
         }
 
@@ -83,19 +83,28 @@ public partial class EjsRenderFragment : ComponentBase
         }
         catch (Exception ex)
         {
-            logger.LogTrace("Deserialise EditorJsStylingMap Failed: {Exception}", ex.Message);
-            throw;
+            Logger.LogError("Deserialise EditorJsStylingMap Failed: {Exception}", ex.Message);
+            Logger.LogError("StylingMap: {StylingMap}", StylingMap);
+            editor_js_styling_map = [];
         }
 
-        CustomRenderTreeBuilder custom_render_tree_builder = new()
+        try
         {
-            Builder = builder,
-            StylingMap = editor_js_styling_map?.ToList().AsReadOnly() ?? Enumerable.Empty<EditorJsStylingMap>().ToList().AsReadOnly()
-        };
+            CustomRenderTreeBuilder custom_render_tree_builder = new()
+            {
+                Builder = builder,
+                StylingMap = editor_js_styling_map.ToList().AsReadOnly()
+            };
 
-        foreach (EditorJsBlock block in blocks.Blocks)
+            foreach (EditorJsBlock block in blocks.Blocks)
+            {
+                RenderBlock(custom_render_tree_builder, block);
+            }
+        }
+        catch (Exception ex)
         {
-            RenderBlock(custom_render_tree_builder, block);
+            Logger.LogTrace("RenderBlock Failed or was null value: {Exception}", ex.Message);
+            return;
         }
     };
 

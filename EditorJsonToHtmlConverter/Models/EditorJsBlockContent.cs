@@ -1,7 +1,10 @@
 ﻿namespace EditorJsonToHtmlConverter.Models;
 
-public sealed class EditorJsBlockContent
+public sealed class EditorJsBlockContent : IEditorJsEntity<EditorJsBlockContent>
 {
+    [JsonIgnore]
+    public static EditorJsBlockContent Empty => new();
+
     [JsonPropertyName("content")]
     public string? Content { get; set; }
 
