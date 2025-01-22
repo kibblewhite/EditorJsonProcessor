@@ -7,7 +7,7 @@ public sealed class EditorJsBlocks : IEditorJsEntity<EditorJsBlocks>
     {
         Time = 0,
         Blocks = [],
-        Version = string.Empty
+        Version = "0.0.0"
     };
 
     [JsonPropertyName("time")]

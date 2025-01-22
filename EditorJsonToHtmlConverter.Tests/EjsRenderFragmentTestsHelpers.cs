@@ -3,9 +3,9 @@
 
     public static readonly string EditorJsonEmpty = """
         {
-          "time": 1707325917682,
+          "time": 0,
           "blocks": [],
-          "version": "2.28.2"
+          "version": "0.0.0"
         }
         """;
 

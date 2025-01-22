@@ -64,7 +64,7 @@ public class EjsHtmlRendererTests
         string json_value = EjsRenderFragmentTestsHelpers.EditorJsonEmpty;
 
         // Act
-        string result = await _ejs_html_renderer.ParseAsync(json_value);
+        string result = await _ejs_html_renderer.ParseAsync(json_value, true);
 
         // Assert
         Assert.AreEqual(string.Empty, result);
