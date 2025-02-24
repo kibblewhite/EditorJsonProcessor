@@ -35,7 +35,7 @@ public sealed class RenderImage : IBlockRenderer
 
         if (withBackground)
         {
-            styleBuilder.Append("background-color: #f2f2f2; ");
+            styleBuilder.Append("margin: 0 auto; ");
         }
 
         if (stretched)
