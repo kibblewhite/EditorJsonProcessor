@@ -550,6 +550,7 @@ public sealed class RenderEmbed : IBlockRenderer
     private static void RenderInstagramEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
         string remoteId = GetRemoteIdFromInstagramSource(source);
+        // https://www.instagram.com/reel/DB5IZC5I_ef/
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "src", $"https://www.instagram.com/p/{remoteId}/embed");
@@ -570,17 +571,17 @@ public sealed class RenderEmbed : IBlockRenderer
     private static string GetRemoteIdFromInstagramSource(string? source)
     {
         // Handles: https://www.instagram.com/p/{shortcode}/
+        // Handles: https://www.instagram.com/reel/{shortcode}/
         if (string.IsNullOrWhiteSpace(source))
-            return string.Empty;
+        {
+            return "0";
+        }
 
         Uri uri = new(source);
         string[] segments = uri.Segments;
-        if (segments.Length >= 3 && segments[1].Trim('/') == "p")
-        {
-            return segments[2].Trim('/');
-        }
-
-        return string.Empty;
+        return segments.Length >= 3 && (segments[1].Trim('/') == "p" || segments[1].Trim('/') == "reel")
+            ? segments[2].Trim('/')
+            : "0";
     }
 
     private static void RenderFacebookEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
