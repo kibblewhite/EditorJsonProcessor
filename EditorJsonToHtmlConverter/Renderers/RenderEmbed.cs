@@ -89,6 +89,9 @@ public sealed class RenderEmbed : IBlockRenderer
             case "music.yandex.playlist":
                 RenderYandexMusicPlaylistEmbed(render_tree_builder, source);
                 break;
+            case "google-maps":
+                RenderGoogleMapsEmbed(render_tree_builder, source, width, height);
+                break;
             // Add other services as needed
             default:
                 // Handle unknown or unsupported service
@@ -104,6 +107,41 @@ public sealed class RenderEmbed : IBlockRenderer
             render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, caption);
             render_tree_builder.Builder.CloseElement(); // Close the p element
         }
+    }
+
+    private static void RenderGoogleMapsEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
+    {
+        string embedUrl = GetGoogleMapsEmbedUrlFromSource(source);
+
+        render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", width == 0 ? 600 : width);
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "height", height == 0 ? 450 : height);
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "style", "border:0;");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "loading", "lazy");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "allowfullscreen", true);
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "referrerpolicy", "no-referrer-when-downgrade");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "src", embedUrl);
+        render_tree_builder.Builder.CloseElement();
+    }
+
+    private static string GetGoogleMapsEmbedUrlFromSource(string? source)
+    {
+        // Expecting a URL that already contains "/maps/embed?pb="
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return string.Empty;
+        }
+
+        Uri uri = new(source);
+
+        // If already an embed URL, return it directly
+        if (uri.AbsolutePath.Contains("/maps/embed"))
+        {
+            return uri.ToString();
+        }
+
+        // Otherwise, not supported – require proper embed link for safety
+        return string.Empty;
     }
 
     private static void RenderYandexMusicAlbumEmbed(CustomRenderTreeBuilder render_tree_builder, string? source)
@@ -524,10 +562,26 @@ public sealed class RenderEmbed : IBlockRenderer
         render_tree_builder.Builder.CloseElement(); // Close the iframe element
     }
 
-    // Helper method to extract Instagram remote ID from source URL
-    private static string GetRemoteIdFromInstagramSource(string? source) =>
-        // Implement logic to extract remote ID from Instagram source URL
-        "instagram_remote_id";
+    /// <summary>
+    /// Helper method to extract Instagram remote ID from source URL
+    /// </summary>
+    /// <param name="source"></param>
+    /// <returns></returns>
+    private static string GetRemoteIdFromInstagramSource(string? source)
+    {
+        // Handles: https://www.instagram.com/p/{shortcode}/
+        if (string.IsNullOrWhiteSpace(source))
+            return string.Empty;
+
+        Uri uri = new(source);
+        string[] segments = uri.Segments;
+        if (segments.Length >= 3 && segments[1].Trim('/') == "p")
+        {
+            return segments[2].Trim('/');
+        }
+
+        return string.Empty;
+    }
 
     private static void RenderFacebookEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -594,24 +648,85 @@ public sealed class RenderEmbed : IBlockRenderer
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "src", $"https://www.youtube.com/embed/{remoteId}");
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", width);
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "height", height);
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", width == 0 ? 560 : width);
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "height", height == 0 ? 315 : height);
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "frameborder", "0");
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "allowfullscreen", "true");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "referrerpolicy", "strict-origin-when-cross-origin");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "allowfullscreen", string.Empty);
         render_tree_builder.Builder.CloseElement(); // Close the iframe element
     }
 
-    // Helper method to extract Facebook remote ID from source URL
-    private static string GetRemoteIdFromFacebookSource(string? source) =>
-        // Implement logic to extract remote ID from Facebook source URL
-        "facebook_remote_id";
+    /// <summary>
+    /// Helper method to extract Facebook remote ID from source URL
+    /// </summary>
+    /// <param name="source"></param>
+    /// <returns></returns>
+    private static string GetRemoteIdFromFacebookSource(string? source)
+    {
+        // Handles: https://www.facebook.com/{user}/posts/{postId}
+        //          https://www.facebook.com/permalink.php?story_fbid=POST_ID&id=USER_ID
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return string.Empty;
+        }
 
-    private static string GetRemoteIdFromVimeoSource(string? source) =>
-        // Implement logic to extract remote ID from Vimeo source URL
-        "vimeo_remote_id";
+        Uri uri = new(source);
+        if (uri.AbsolutePath.Contains("/posts/") || uri.AbsolutePath.Contains("/videos/"))
+        {
+            return uri.AbsolutePath.Trim('/');
+        }
 
-    // Helper method to extract YouTube remote ID from source URL
-    private static string GetRemoteIdFromYouTubeSource(string? source) =>
-        // Implement logic to extract remote ID from YouTube source URL
-        "youtube_remote_id";
+        System.Collections.Specialized.NameValueCollection query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        string storyFbid = query["story_fbid"] ?? string.Empty;
+        string id = query["id"] ?? string.Empty;
+        return (!string.IsNullOrEmpty(storyFbid) && !string.IsNullOrEmpty(id))
+            ? $"{id}/posts/{storyFbid}"
+            : string.Empty;
+    }
+
+    /// <summary>
+    /// Implement logic to extract remote ID from Vimeo source URL
+    /// </summary>
+    /// <param name="source"></param>
+    /// <returns></returns>
+    private static string GetRemoteIdFromVimeoSource(string? source)
+    {
+        // Handles: https://vimeo.com/123456789
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return string.Empty;
+        }
+
+        Uri uri = new(source);
+        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Helper method to extract YouTube remote ID from source URL
+    /// </summary>
+    /// <param name="source"></param>
+    /// <returns></returns>
+    private static string GetRemoteIdFromYouTubeSource(string? source)
+    {
+        // Handles: https://www.youtube.com/watch?v=VIDEO_ID or https://youtu.be/VIDEO_ID
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return string.Empty;
+        }
+
+        Uri uri = new(source);
+        if (uri.Host.Contains("youtu.be"))
+        {
+            return uri.Segments.Last().Trim('/');
+        }
+
+        if (uri.Host.Contains("youtube.com"))
+        {
+            System.Collections.Specialized.NameValueCollection query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            return query["v"] ?? string.Empty;
+        }
+
+        return string.Empty;
+    }
 }
