@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="EditorJsonToHtmlConverter/LICENSE" />
+    <File Path="EditorJsonToHtmlConverter/README.md" />
+  </Folder>
+  <Project Path="EditorJsonToHtmlConverter.Tests/EditorJsonToHtmlConverter.Tests.csproj" />
+  <Project Path="EditorJsonToHtmlConverter/EditorJsonToHtmlConverter.csproj" />
+</Solution>

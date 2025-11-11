@@ -1,4 +1,6 @@
-﻿internal static class EjsRenderFragmentTestsHelpers
+﻿[assembly: DoNotParallelize]
+
+internal static class EjsRenderFragmentTestsHelpers
 {
 
     public static readonly string EditorJsonEmpty = """

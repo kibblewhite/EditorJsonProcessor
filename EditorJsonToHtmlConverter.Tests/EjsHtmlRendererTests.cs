@@ -36,7 +36,7 @@ public class EjsHtmlRendererTests
         string result = await _ejs_html_renderer.ParseAsync(json_value);
 
         // Assert
-        Assert.IsTrue(result.Contains(expected_html));
+        Assert.Contains(expected_html, result);
     }
 
     [TestMethod]
@@ -52,7 +52,7 @@ public class EjsHtmlRendererTests
         string result = await _ejs_html_renderer.ParseAsync(json_value, false, EjsRenderFragmentTestsHelpers.StylingMap);
 
         // Assert
-        Assert.IsTrue(result.Contains(expected_html));
+        Assert.Contains(expected_html, result);
     }
 
     [TestMethod]
@@ -70,20 +70,20 @@ public class EjsHtmlRendererTests
         Assert.AreEqual(string.Empty, result);
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(JsonException))]
-    public async Task ParseAsync_ThrowsJsonException_ForInvalidJson()
-    {
-        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+    //[TestMethod]
+    //[ExpectedException(typeof(JsonException))]
+    //public async Task ParseAsync_ThrowsJsonException_ForInvalidJson()
+    //{
+    //    ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
 
-        // Arrange
-        string invalid_json_value = "Invalid JSON";
+    //    // Arrange
+    //    string invalid_json_value = "Invalid JSON";
 
-        // Act
-        await _ejs_html_renderer.ParseAsync(invalid_json_value);
+    //    // Act
+    //    await _ejs_html_renderer.ParseAsync(invalid_json_value);
 
-        // Assert is handled by ExpectedException
-    }
+    //    // Assert is handled by ExpectedException
+    //}
 
     [TestMethod]
     public async Task ParseAsync_ThrowsException_ForInvalidJson()

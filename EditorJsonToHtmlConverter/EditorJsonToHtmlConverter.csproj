@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<LangVersion>13.0</LangVersion>
+		<TargetFramework>net10.0</TargetFramework>
+		<LangVersion>14.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Version>1.0.0.20</Version>
+		<Version>1.0.0.21</Version>
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
 		<AssemblyName>EditorJsonToHtmlConverter</AssemblyName>
 		<RootNamespace>EditorJsonToHtmlConverter</RootNamespace>
@@ -24,11 +24,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<SupportedPlatform Include="browser" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.2" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
 	</ItemGroup>
 	
 	<ItemGroup>

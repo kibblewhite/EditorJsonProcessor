@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace EditorJsonToHtmlConverter.Tests;
 
 [TestClass]
-public class EjsRenderFragmentTests : Bunit.TestContext
+public class EjsRenderFragmentTests : Bunit.BunitContext
 {
     private ILogger<EjsRenderFragment> _logger = default!;
 
@@ -29,7 +29,7 @@ public class EjsRenderFragmentTests : Bunit.TestContext
         _ = _logger;
 
         // "does not resolve to a public property on the component" <- Google returnes zero results on this, so for now now unit testing until the produce matures a bit more.
-        IRenderedComponent<EjsRenderFragment> cut = RenderComponent<EjsRenderFragment>(parameters => parameters
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
             .Add(p => p.Value, EjsRenderFragmentTestsHelpers.EditorJsonValue)
             .Add(p => p.StylingMap, styling_map));
 

@@ -311,7 +311,7 @@ public sealed class RenderEmbed : IBlockRenderer
         }
 
         Uri uri = new(source);
-        return uri.Segments.SkipWhile(s => s.Trim('/') != "pen").Skip(1).Take(2).ToArray();
+        return [ .. uri.Segments.SkipWhile(s => s.Trim('/') != "pen").Skip(1).Take(2) ];
     }
 
     private static void RenderAparatEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
