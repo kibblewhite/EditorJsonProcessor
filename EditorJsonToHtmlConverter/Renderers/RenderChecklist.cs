@@ -4,8 +4,8 @@ public sealed class RenderChecklist : IBlockRenderer
 {
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string? id = block.Id;
-        List<EditorJsBlockContent>? items = block?.Data?.Items;
+        string id = block.Id;
+        List<EditorJsBlockContent>? items = block.Data.Items;
 
         if (items == null) { return; }
 
@@ -45,7 +45,7 @@ public sealed class RenderChecklist : IBlockRenderer
             render_tree_builder.Builder.CloseElement(); // Close the input
 
             // Render checklist item text
-            render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, item.Text);
+            render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, item.Text ?? string.Empty);
 
             // Check and render nested checklists
             if (item.Items != null && item.Items.Count > 0)
@@ -81,7 +81,7 @@ public sealed class RenderChecklist : IBlockRenderer
             render_tree_builder.Builder.CloseElement(); // Close the input
 
             // Render checklist item text
-            render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, item.Text);
+            render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, item.Text ?? string.Empty);
 
             // Check and render nested checklists
             if (item.Items != null && item.Items.Count > 0)

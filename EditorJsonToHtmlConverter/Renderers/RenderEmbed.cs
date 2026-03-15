@@ -132,7 +132,10 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
 
         // If already an embed URL, return it directly
         if (uri.AbsolutePath.Contains("/maps/embed"))
@@ -195,7 +198,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         string[] segments = uri.Segments;
         return segments.Length >= 2 ? segments[^1].TrimEnd('/') : string.Empty;
     }
@@ -208,10 +215,14 @@ public sealed class RenderEmbed : IBlockRenderer
         // Example for playlist: https://music.yandex.ru/users/username/playlists/12345
         if (string.IsNullOrWhiteSpace(source))
         {
-            return Enumerable.Empty<string>().ToArray();
+            return [];
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return [];
+        }
+
         string[] segments = uri.Segments;
         List<string> ids = [];
 
@@ -250,9 +261,21 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         string[] segments = uri.Segments;
-        return segments.Length >= 2 ? segments[^1] : string.Empty;
+        if (segments.Length < 2)
+        {
+            return string.Empty;
+        }
+
+        string id = segments[^1].Trim('/');
+        return id.Length > 0 && id.AsSpan().IndexOfAnyExcept("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-") < 0
+            ? id
+            : string.Empty;
     }
 
     private static void RenderPinterestEmbed(CustomRenderTreeBuilder render_tree_builder, string? source)
@@ -280,7 +303,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.Last().Trim('/');
     }
 
@@ -307,11 +334,15 @@ public sealed class RenderEmbed : IBlockRenderer
         // Example: https://codepen.io/username/pen/abcdef123456
         if (string.IsNullOrWhiteSpace(source))
         {
-            return Enumerable.Empty<string>().ToArray();
+            return [];
         }
 
-        Uri uri = new(source);
-        return [ .. uri.Segments.SkipWhile(s => s.Trim('/') != "pen").Skip(1).Take(2) ];
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return [];
+        }
+
+        return [.. uri.Segments.SkipWhile(s => s.Trim('/') != "pen").Skip(1).Take(2)];
     }
 
     private static void RenderAparatEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
@@ -340,7 +371,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
     }
 
@@ -368,7 +403,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
     }
 
@@ -397,7 +436,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
     }
 
@@ -426,7 +469,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
     }
 
@@ -456,7 +503,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
     }
 
@@ -486,7 +537,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
     }
 
@@ -517,7 +572,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         string[] segments = uri.Segments;
         return segments.Length == 4 ? segments[3].Trim('/') : string.Empty;
     }
@@ -574,14 +633,18 @@ public sealed class RenderEmbed : IBlockRenderer
         // Handles: https://www.instagram.com/reel/{shortcode}/
         if (string.IsNullOrWhiteSpace(source))
         {
-            return "0";
+            return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         string[] segments = uri.Segments;
         return segments.Length >= 3 && (segments[1].Trim('/') == "p" || segments[1].Trim('/') == "reel")
             ? segments[2].Trim('/')
-            : "0";
+            : string.Empty;
     }
 
     private static void RenderFacebookEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
@@ -626,7 +689,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
     }
 
@@ -672,7 +739,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         if (uri.AbsolutePath.Contains("/posts/") || uri.AbsolutePath.Contains("/videos/"))
         {
             return uri.AbsolutePath.Trim('/');
@@ -699,7 +770,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
+
         return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
     }
 
@@ -716,7 +791,10 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        Uri uri = new(source);
+        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        {
+            return string.Empty;
+        }
         if (uri.Host.Contains("youtu.be"))
         {
             return uri.Segments.Last().Trim('/');

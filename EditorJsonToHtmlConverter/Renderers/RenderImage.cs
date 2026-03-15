@@ -4,12 +4,12 @@ public sealed class RenderImage : IBlockRenderer
 {
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string? id = block.Id;
-        string? url = block.Data?.Url;
-        string? caption = block.Data?.Caption;
-        bool withBorder = block.Data?.WithBorder ?? false;
-        bool withBackground = block.Data?.WithBackground ?? false;
-        bool stretched = block.Data?.Stretched ?? false;
+        string id = block.Id;
+        string? url = block.Data.Url;
+        string? caption = block.Data.Caption;
+        bool withBorder = block.Data.WithBorder ?? false;
+        bool withBackground = block.Data.WithBackground ?? false;
+        bool stretched = block.Data.Stretched ?? false;
 
         // Render image
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "img");

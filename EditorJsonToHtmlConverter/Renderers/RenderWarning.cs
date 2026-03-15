@@ -4,9 +4,9 @@ public sealed class RenderWarning : IBlockRenderer
 {
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string? id = block.Id;
-        string? title = block.Data?.Title;
-        string? message = block.Data?.Message;
+        string id = block.Id;
+        string? title = block.Data.Title;
+        string? message = block.Data.Message;
 
         // Render warning block
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "div");

@@ -4,8 +4,8 @@ public sealed class RenderDelimiter : IBlockRenderer
 {
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string? id = block.Id;
-        string? text = block.Data?.Text;
+        string id = block.Id;
+        string? text = block.Data.Text;
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "hr");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "id", id);

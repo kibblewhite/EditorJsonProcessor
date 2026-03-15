@@ -4,10 +4,10 @@ public sealed class RenderQuote : IBlockRenderer
 {
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string? id = block.Id;
-        string? text = block?.Data?.Text;
-        string? caption = block?.Data?.Caption;
-        string? alignment = block?.Data?.Alignment;
+        string id = block.Id;
+        string? text = block.Data.Text;
+        string? caption = block.Data.Caption;
+        string? alignment = block.Data.Alignment;
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "blockquote");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "id", id);
@@ -30,7 +30,7 @@ public sealed class RenderQuote : IBlockRenderer
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "class", $"text-{alignment}");
         }
 
-        render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, text);
+        render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, text ?? string.Empty);
 
         if (!string.IsNullOrEmpty(caption))
         {

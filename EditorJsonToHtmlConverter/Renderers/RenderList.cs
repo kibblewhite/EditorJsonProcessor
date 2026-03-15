@@ -5,9 +5,9 @@ public sealed class RenderList : IBlockRenderer
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
 
-        string? id = block.Id;
-        string? style = block?.Data?.Style;
-        List<EditorJsBlockContent>? items = block?.Data?.Items;
+        string id = block.Id;
+        string? style = block.Data.Style;
+        List<EditorJsBlockContent>? items = block.Data.Items;
 
         if (items == null) { return; }
 

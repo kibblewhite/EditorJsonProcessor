@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(dotnet build:*)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" build /mnt/c/Users/kibblewhite/source/graveyard/EditorJsonProcessor/EditorJsonProcessor.slnx 2>&1)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" build 2>&1)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" test 2>&1)"
+    ]
+  }
+}

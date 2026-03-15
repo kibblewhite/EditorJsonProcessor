@@ -4,9 +4,9 @@ public sealed class RenderTable : IBlockRenderer
 {
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string? id = block.Id;
-        bool withHeadings = block?.Data?.WithHeadings ?? false;
-        List<List<string?>>? content = block?.Data?.Content;
+        string id = block.Id;
+        bool withHeadings = block.Data.WithHeadings ?? false;
+        List<List<string?>>? content = block.Data.Content;
 
         if (content == null) { return; }
 
@@ -29,7 +29,7 @@ public sealed class RenderTable : IBlockRenderer
             foreach (string? cell in content.First())
             {
                 render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "th");
-                render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, cell);
+                render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, cell ?? string.Empty);
                 render_tree_builder.Builder.CloseElement(); // Close the th
             }
 
@@ -46,7 +46,7 @@ public sealed class RenderTable : IBlockRenderer
             foreach (string? cell in row)
             {
                 render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "td");
-                render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, cell);
+                render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, cell ?? string.Empty);
                 render_tree_builder.Builder.CloseElement(); // Close the td
             }
 

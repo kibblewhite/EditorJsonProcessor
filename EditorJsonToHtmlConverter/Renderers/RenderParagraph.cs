@@ -4,8 +4,8 @@ public sealed class RenderParagraph : IBlockRenderer
 {
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string? id = block.Id;
-        string? text = block.Data?.Text;
+        string id = block.Id;
+        string? text = block.Data.Text;
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "p");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "id", id);
@@ -18,7 +18,7 @@ public sealed class RenderParagraph : IBlockRenderer
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "class", css.Style);
         }
 
-        render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, text);
+        render_tree_builder.Builder.AddMarkupContent(render_tree_builder.SequenceCounter, text ?? string.Empty);
         render_tree_builder.Builder.CloseElement();
     }
 }
