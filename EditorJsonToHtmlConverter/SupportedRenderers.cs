@@ -40,5 +40,8 @@ public enum SupportedRenderers
     Embed,
 
     [StringValue(nameof(Text))]
-    Text
+    Text,
+
+    [StringValue("leaflet-map")]
+    LeafletMap
 }

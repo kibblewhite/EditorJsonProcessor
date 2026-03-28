@@ -4,9 +4,11 @@
 /// Renders the EjsRenderFragment component as HTML using a provided HtmlRenderer.
 /// </summary>
 /// <param name="html_renderer">The HtmlRenderer instance used to render the components.</param>
-public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer)
+/// <param name="data_retrieval_mode">Controls whether leaflet-map blocks render embedded data or GUID references. Defaults to Embedded.</param>
+public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded)
 {
     private readonly HtmlRenderer _html_renderer = html_renderer;
+    private readonly DataRetrievalMode _data_retrieval_mode = data_retrieval_mode;
 
     [GeneratedRegex(@"</?.+?>")]
     private static partial Regex StripHtmlRegex();
@@ -20,7 +22,7 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer)
     /// <returns>A task that represents the asynchronous operation. The task result contains the generated HTML string.</returns>
     public async Task<string> ParseAsync(string value, bool strip_html = false, string? styling_map = "[]")
     {
-        ParameterView parameters = BuildParameters(value, styling_map);
+        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode);
         string fragment = await RenderComponentAsHtmlAsync<EjsRenderFragment>(parameters);
 
         if (strip_html is false)
@@ -41,7 +43,7 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer)
     /// <returns>A task that represents the asynchronous operation. The task result contains the generated HTML root component.</returns>
     public async Task<HtmlRootComponent> ParseAsHtmlRootComponentAsync(string value, string? styling_map = "[]")
     {
-        ParameterView parameters = BuildParameters(value, styling_map);
+        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode);
         return await RenderComponentAsHtmlRootComponentAsync<EjsRenderFragment>(parameters);
     }
 
@@ -50,13 +52,15 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer)
     /// </summary>
     /// <param name="value">The JSON output from the EditorJS block editor.</param>
     /// <param name="styling_map">The JSON string representing the styling map. Default is an empty array.</param>
+    /// <param name="data_retrieval_mode">Controls whether leaflet-map blocks render embedded data or GUID references.</param>
     /// <returns>A ParameterView containing the parameters for the component.</returns>
-    private static ParameterView BuildParameters(string value, string? styling_map = "[]")
+    private static ParameterView BuildParameters(string value, string? styling_map = "[]", DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded)
     {
         Dictionary<string, object?> dictionary = new()
         {
             { nameof(EjsRenderFragment.Value), value },
-            { nameof(EjsRenderFragment.StylingMap), styling_map }
+            { nameof(EjsRenderFragment.StylingMap), styling_map },
+            { nameof(EjsRenderFragment.DataRetrievalMode), data_retrieval_mode }
         };
 
         ParameterView parameters = ParameterView.FromDictionary(dictionary);

@@ -26,6 +26,13 @@ public partial class EjsRenderFragment : ComponentBase
     public required string StylingMap { get; set; } = "[]";
 
     /// <summary>
+    /// Gets or sets the data retrieval mode that controls whether leaflet-map blocks render
+    /// embedded resolved data or data-* attribute references.
+    /// </summary>
+    [Parameter]
+    public DataRetrievalMode DataRetrievalMode { get; set; } = DataRetrievalMode.Embedded;
+
+    /// <summary>
     /// Gets or sets the logger instance used for logging within the component.
     /// </summary>
     [Inject]
@@ -93,7 +100,8 @@ public partial class EjsRenderFragment : ComponentBase
             CustomRenderTreeBuilder custom_render_tree_builder = new()
             {
                 Builder = builder,
-                StylingMap = editor_js_styling_map.ToList().AsReadOnly()
+                StylingMap = editor_js_styling_map.ToList().AsReadOnly(),
+                DataRetrievalMode = DataRetrievalMode
             };
 
             foreach (EditorJsBlock block in blocks.Blocks)
@@ -115,7 +123,8 @@ public partial class EjsRenderFragment : ComponentBase
     /// <param name="block">The EditorJS block to render.</param>
     internal static void RenderBlock(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        if (Enum.TryParse(block.Type, true, out SupportedRenderers renderer) is false)
+        string normalised_type = block.Type.Replace("-", string.Empty);
+        if (Enum.TryParse(normalised_type, true, out SupportedRenderers renderer) is false)
         {
             return;
         }
@@ -154,6 +163,9 @@ public partial class EjsRenderFragment : ComponentBase
                 break;
             case SupportedRenderers.Text:
                 RenderText.Render(render_tree_builder, block);
+                break;
+            case SupportedRenderers.LeafletMap:
+                RenderLeafletMap.Render(render_tree_builder, block);
                 break;
         }
     }

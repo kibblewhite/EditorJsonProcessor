@@ -4,6 +4,7 @@ public class CustomRenderTreeBuilder
 {
     public required IReadOnlyList<EditorJsStylingMap> StylingMap { get; init; }
     public required RenderTreeBuilder Builder { get; init; }
+    public required DataRetrievalMode DataRetrievalMode { get; init; }
 
     /// <summary>
     /// By accessing the <see cref="SequenceCounter"/> it will automatically increment the value by one.

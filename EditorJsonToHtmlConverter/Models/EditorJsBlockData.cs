@@ -141,4 +141,80 @@ public sealed class EditorJsBlockData : IEditorJsEntity<EditorJsBlockData>
     /// </summary>
     [JsonPropertyName("wrap")]
     public string? Wrap { get; set; }
+
+    // Leaflet-map block properties
+
+    /// <summary>
+    /// Gets or sets the map centre coordinates for leaflet-map blocks.
+    /// </summary>
+    [JsonPropertyName("center")]
+    public EditorJsMapCenter? Center { get; set; }
+
+    /// <summary>
+    /// Gets or sets the map zoom level for leaflet-map blocks.
+    /// </summary>
+    [JsonPropertyName("zoom")]
+    public int? Zoom { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tile URL for leaflet-map blocks.
+    /// </summary>
+    [JsonPropertyName("tileUrl")]
+    public string? TileUrl { get; set; }
+
+    /// <summary>
+    /// Gets or sets the venue GUID references for leaflet-map blocks.
+    /// </summary>
+    [JsonPropertyName("venueGuids")]
+    public List<string>? VenueGuids { get; set; }
+
+    /// <summary>
+    /// Gets or sets the space GUID references for leaflet-map blocks.
+    /// </summary>
+    [JsonPropertyName("spaceGuids")]
+    public List<string>? SpaceGuids { get; set; }
+
+    /// <summary>
+    /// Gets or sets the typology GUID references for leaflet-map blocks.
+    /// </summary>
+    [JsonPropertyName("typologyGuids")]
+    public List<string>? TypologyGuids { get; set; }
+
+    /// <summary>
+    /// Gets or sets the activity GUID references with space snapshots for leaflet-map blocks.
+    /// </summary>
+    [JsonPropertyName("activityGuids")]
+    public List<EditorJsMapActivityReference>? ActivityGuids { get; set; }
+
+    // Leaflet-map resolved data (populated by MW-13 for embedded mode)
+
+    /// <summary>
+    /// Gets or sets the resolved venue data for leaflet-map blocks in embedded mode.
+    /// </summary>
+    [JsonPropertyName("venues")]
+    public List<JsonElement>? Venues { get; set; }
+
+    /// <summary>
+    /// Gets or sets the resolved space data for leaflet-map blocks in embedded mode.
+    /// </summary>
+    [JsonPropertyName("spaces")]
+    public List<JsonElement>? Spaces { get; set; }
+
+    /// <summary>
+    /// Gets or sets the resolved typology data for leaflet-map blocks in embedded mode.
+    /// </summary>
+    [JsonPropertyName("typologies")]
+    public List<JsonElement>? Typologies { get; set; }
+
+    /// <summary>
+    /// Gets or sets the resolved POI data for leaflet-map blocks in embedded mode.
+    /// </summary>
+    [JsonPropertyName("pois")]
+    public List<JsonElement>? Pois { get; set; }
+
+    /// <summary>
+    /// Gets or sets the resolved activity data for leaflet-map blocks in embedded mode.
+    /// </summary>
+    [JsonPropertyName("activities")]
+    public List<JsonElement>? Activities { get; set; }
 }

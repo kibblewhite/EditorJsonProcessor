@@ -1,4 +1,6 @@
-﻿namespace EditorJsonToHtmlConverter.Models;
+﻿using System.Reflection;
+
+namespace EditorJsonToHtmlConverter.Models;
 
 public class SupportedRenderersConverter : JsonConverter<SupportedRenderers>
 {
@@ -6,7 +8,7 @@ public class SupportedRenderersConverter : JsonConverter<SupportedRenderers>
     {
         if (reader.TokenType == JsonTokenType.String)
         {
-            string? enum_string = reader.GetString();
+            string? enum_string = reader.GetString()?.Replace("-", string.Empty);
             if (Enum.TryParse(enum_string, true, out SupportedRenderers result))
             {
                 return result;
@@ -17,5 +19,12 @@ public class SupportedRenderersConverter : JsonConverter<SupportedRenderers>
     }
 
     public override void Write(Utf8JsonWriter writer, SupportedRenderers value, JsonSerializerOptions options)
-        => writer.WriteStringValue(value.ToString().ToLowerInvariant());
+    {
+        StringValueAttribute? string_value_attribute = value.GetType()
+            .GetField(value.ToString())?
+            .GetCustomAttribute<StringValueAttribute>();
+
+        string output = string_value_attribute?.Value?.ToLowerInvariant() ?? value.ToString().ToLowerInvariant();
+        writer.WriteStringValue(output);
+    }
 }
