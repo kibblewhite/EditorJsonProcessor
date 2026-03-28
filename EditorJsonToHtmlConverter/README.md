@@ -1,62 +1,190 @@
-# Editor Json Processor
+# EditorJsonToHtmlConverter
 
-This package contains two items which are:
+A .NET 10.0 Blazor library that converts [Editor.js](https://editorjs.io/) JSON output into HTML. It provides two rendering approaches:
 
-- EjsHtmlRenderer
-    - This will convert EditorJS JSON output into a plain HTML/text string.
+- **EjsHtmlRenderer** -- Converts Editor.js JSON into a plain HTML string (or stripped plain text) for server-side use.
+- **EjsRenderFragment** -- A Blazor component that renders Editor.js JSON as a `RenderFragment` within Razor pages.
 
-- EjsRenderFragment
-    - This is to be used within the razor pages to create a segment of UI content from the provided EditorJS JSON.
+## Getting Started
 
-
-## Getting started
-
-Add service(s) to DI container if required:
+Register the required services in your DI container:
 
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScopedEditorJsonProcessorServices();
 ```
 
-This will add both of the following into the service collection:
-- `Microsoft.AspNetCore.Components.Web.HtmlRenderer`
-- `EditorJsonToHtmlConverter.EjsHtmlRenderer` 
+This registers both `Microsoft.AspNetCore.Components.Web.HtmlRenderer` and `EjsHtmlRenderer` as scoped services.
+
+## Usage
+
+### EjsHtmlRenderer (Server-Side)
+
+Inject `EjsHtmlRenderer` and call one of its parse methods:
+
+```csharp
+string editor_json = "{ ... }";
+
+// Render as HTML string
+string html = await EjsHtmlRenderer.ParseAsync(editor_json);
+
+// Render as plain text (HTML tags stripped)
+string plain_text = await EjsHtmlRenderer.ParseAsync(editor_json, strip_html: true);
+
+// Render with custom styling
+string styled_html = await EjsHtmlRenderer.ParseAsync(editor_json, styling_map: styling_json);
+
+// Render as HtmlRootComponent
+HtmlRootComponent root = await EjsHtmlRenderer.ParseAsHtmlRootComponentAsync(editor_json);
+```
+
+### EjsRenderFragment (Razor Component)
+
+```razor
+<EjsRenderFragment Value="@editor_json" />
+
+<!-- With optional styling and data retrieval mode -->
+<EjsRenderFragment Value="@editor_json"
+                   StylingMap="@styling_json"
+                   DataRetrievalMode="DataRetrievalMode.Reference" />
+```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `Value` | `string` | *(required)* | Editor.js JSON output |
+| `StylingMap` | `string` | `"[]"` | JSON array defining CSS class mappings per block type |
+| `DataRetrievalMode` | `DataRetrievalMode` | `Embedded` | Controls leaflet-map rendering mode |
+
+## Supported Block Types
+
+| Block Type | HTML Output | Key Features |
+|---|---|---|
+| `paragraph` | `<p>` | Rich text with markup content |
+| `header` | `<h1>` -- `<h6>` | Level-based heading (1--6) |
+| `list` | `<ol>` / `<ul>` | Ordered/unordered with nested list support |
+| `quote` | `<blockquote>` | Text, caption, alignment (left/center/right) |
+| `checklist` | `<ul>` with checkboxes | Disabled checkboxes with checked state |
+| `table` | `<table>` | Optional header row (`withHeadings`), cell markup |
+| `image` | `<img>` | URL, caption, border/background/stretched flags |
+| `delimiter` | `<hr>` | Horizontal rule |
+| `warning` | `<div>` | Bold title and message paragraph |
+| `embed` | `<iframe>` / service-specific | 20 embed services (see below) |
+| `text` | Raw markup | Direct content without a wrapper element |
+| `leaflet-map` | `<div>` | Two rendering modes: Embedded or Reference |
+
+### Supported Embed Services
+
+Vimeo, YouTube, Coub, Facebook, Instagram, Twitter, Twitch (channel & video), Miro, Gfycat, Imgur, Vine, Aparat, CodePen, Pinterest, GitHub Gist, Yandex Music (album, track, playlist), and Google Maps.
+
+## DataRetrievalMode
+
+Controls how `leaflet-map` blocks render their data:
+
+- **`Embedded`** -- Outputs resolved data as a `<script type="application/json">` child element inside the map div. Suitable when data is resolved server-side.
+- **`Reference`** -- Outputs `data-*` attributes with GUID references on the map div, deferring data resolution to client-side JavaScript.
+
+## CSS Styling Map
+
+The styling map is a JSON array that maps CSS classes to block types. Styles are matched with the following priority (first match wins):
+
+1. Type + Level + ID (most specific)
+2. Type + Level
+3. Type + ID
+4. Type only (fallback)
+
+### Styling Map Sample
+
+```json
+[
+    {
+        "type": "header",
+        "level": 1,
+        "style": "specific-style",
+        "id": "KgrM3aNM-n"
+    },
+    {
+        "type": "header",
+        "level": 3,
+        "style": "general-style"
+    },
+    {
+        "type": "paragraph",
+        "style": "specific-style",
+        "id": "NaTtEbbeRT"
+    },
+    {
+        "type": "paragraph",
+        "style": "general-style"
+    },
+    {
+        "type": "list",
+        "style": "list-group list-group-flush",
+        "item-style": "list-group-item"
+    },
+    {
+        "type": "checklist",
+        "style": "list-group",
+        "item-style": "list-group-item"
+    },
+    {
+        "type": "quote",
+        "style": "blockquote",
+        "footer-style": "blockquote-footer"
+    },
+    {
+        "type": "table",
+        "style": "table table-hover"
+    },
+    {
+        "type": "table",
+        "style": "table table-striped",
+        "id": "zOGIbPv7kl"
+    },
+    {
+        "type": "image",
+        "style": "img-fluid"
+    }
+]
+```
+
+Additional style properties per block type:
+- **list / checklist**: `item-style` for individual list items
+- **quote**: `footer-style` for the caption/footer element
+
+## Extension Methods
+
+`EditorJsBlocksExtensions` provides helpers for programmatic block construction:
+
+```csharp
+// Empty Editor.js JSON string
+string empty = EditorJsBlocksExtensions.EmptyEditorJsString;
+
+// Fluent block building
+EditorJsBlocks blocks = EditorJsBlocks.Empty
+    .AddBlock(new EditorJsBlock { Id = "1", Type = "paragraph", Data = ... })
+    .AddEmptyBlock();
+```
 
 ## Caveat
 
-Some block items generated by EditorJS will have the field `id` missing from the block. For example:
+All blocks **must** include an `id` field. Editor.js sometimes omits `id` on certain block types (e.g., delimiter). The following will fail to deserialise:
 
 ```json
 {
     "blocks": [
         {
-            "type" : "delimiter",
-            "data" : {}
+            "type": "delimiter",
+            "data": {}
         }
     ]
 }
 ```
 
-The `EditorJsonToHtmlConverter` will fail to deserialise the JSON sample above, as the `id` field is a required field.
+Ensure every block has an `id` before passing JSON to the converter.
 
-
-## Usage:
-
-After injecting the `EjsHtmlRenderer` instance, you can implement the code as outline in the example below:
-
-```csharp
-string editor_json = "{ ... editor json emitted from editor js ... }"
-string html = await EjsHtmlRenderer.ParseAsync(editor_json);
-HtmlRootComponent html_root_component = await EjsHtmlRenderer.ParseAsHtmlRootComponentAsync(editor_json);
-```
-
-For razor pages, the usage of `EjsRenderFragment` to generate the HTML looks like the below code sample:
-
-```razor
-<EjsRenderFragment Value="@editor_json" />
-```
-
-### Editor JSON Sample:
+## Editor JSON Sample
 
 ```json
 {
@@ -163,7 +291,7 @@ For razor pages, the usage of `EjsRenderFragment` to generate the HTML looks lik
         ]
         }
     },
-        
+
     {
         "id": "yD5ZHUxF1N",
         "type": "checklist",
@@ -276,57 +404,22 @@ For razor pages, the usage of `EjsRenderFragment` to generate the HTML looks lik
 }
 ```
 
-### Styling Map Sample:
 
-```json
-[
+Notes:
+
+`_content/EditorJsonToHtmlConverter/EditorJsonToHtmlConverter.EjsRenderFragment.razor.js`
+
+For the component to self-initialise, update the `EjsRenderFragment.razor.cs`
+
+```csharp
+[Inject] private IJSRuntime JS { get; set; }
+private IJSObjectReference? _jsModule;
+
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{ 
+    if (firstRender)
     {
-        "type": "header",
-        "level": 1,
-        "style": "specific-style",
-        "id": "KgrM3aNM-n"
-    },
-    {
-        "type": "header",
-        "level": 3,
-        "style": "general-style"
-    },
-    {
-        "type": "paragraph",
-        "style": "specific-style",
-        "id": "NaTtEbbeRT"
-    },
-    {
-        "type": "paragraph",
-        "style": "general-style"
-    },
-    {
-        "type": "list",
-        "style": "list-group list-group-flush",
-        "item-style": "list-group-item"
-    },
-    {
-        "type": "checklist",
-        "style": "list-group",
-        "item-style": "list-group-item"
-    },
-    {
-        "type": "quote",
-        "style": "blockquote",
-        "footer-style": "blockquote-footer"
-    },
-    {
-        "type": "table",
-        "style": "table table-hover"
-    },
-    {
-        "type": "table",
-        "style": "table table-striped",
-        "id": "zOGIbPv7kl"
-    },
-    {
-        "type": "image",
-        "style": "img-fluid"
+        _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/EditorJsonToHtmlConverter/EditorJsonToHtmlConv  erter.EjsRenderFragment.razor.js");
     }
-]
+}
 ```

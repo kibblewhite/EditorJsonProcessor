@@ -1,10 +1,24 @@
 namespace EditorJsonToHtmlConverter.Renderers;
 
 /// <summary>
-/// Renders a leaflet-map block as an HTML container element.
-/// In embedded mode, outputs a child script element with fully resolved JSON data.
-/// In reference mode, outputs data-* attributes with GUID references for client-side resolution.
-/// Does not inject any script or link tags — that is the developer's responsibility.
+/// Renders a leaflet-map block as an HTML container element. Two rendering modes exist:
+///
+/// <b>Embedded mode</b> (internal/management-www): MW-13 resolves all GUID references to
+/// full localised objects <i>before</i> the renderer runs. The block data already contains
+/// complete venue, space, typology, POI, and activity details. The renderer serialises the
+/// entire block data into a child <c>&lt;script type="application/json"&gt;</c> element.
+/// The client JS reads this self-contained JSON and renders the map immediately — no further
+/// API calls are needed.
+///
+/// <b>Reference mode</b> (external/community-gateway-www): The block data contains only
+/// flat GUID lists and map configuration (centre, zoom, tile URL, height). The renderer
+/// outputs these as <c>data-*</c> attributes on the container <c>&lt;div&gt;</c>. A hosted
+/// JS viewer script (served from community-gateway-www) discovers the container, reads the
+/// attributes, and makes HTTPS calls to the GW-01 to GW-05 REST API endpoints with the
+/// developer's chosen locale to fetch the full data. The map renders after those calls complete.
+///
+/// Does not inject any <c>&lt;script&gt;</c> or <c>&lt;link&gt;</c> tags — that is the
+/// consuming developer's responsibility.
 /// </summary>
 public sealed class RenderLeafletMap : IBlockRenderer
 {
@@ -44,59 +58,15 @@ public sealed class RenderLeafletMap : IBlockRenderer
     }
 
     /// <summary>
-    /// Renders a child script element containing the full resolved data as JSON (RL-02).
+    /// Renders a child script element containing the complete block data as JSON (RL-02).
+    /// MW-13 resolves all GUIDs to full objects before rendering, so block.Data contains
+    /// map configuration, resolved venues, spaces, typologies, POIs, and activities with
+    /// all localised fields. The client JS reads this and has everything needed to render
+    /// the map immediately without further API calls.
     /// </summary>
     private static void RenderEmbeddedMode(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        Dictionary<string, object> embedded_data = new();
-
-        if (block.Data.Center is not null)
-        {
-            embedded_data["center"] = new { lat = block.Data.Center.Lat, lng = block.Data.Center.Lng };
-        }
-
-        if (block.Data.Zoom.HasValue)
-        {
-            embedded_data["zoom"] = block.Data.Zoom.Value;
-        }
-
-        if (string.IsNullOrWhiteSpace(block.Data.TileUrl) is false)
-        {
-            embedded_data["tileUrl"] = block.Data.TileUrl;
-        }
-
-        if (block.Data.Height.HasValue)
-        {
-            embedded_data["height"] = block.Data.Height.Value;
-        }
-
-        // Include resolved data if available (populated by MW-13), filtering out null/empty entries (RL-05)
-        if (block.Data.Venues is not null && block.Data.Venues.Count > 0)
-        {
-            embedded_data["venues"] = block.Data.Venues;
-        }
-
-        if (block.Data.Spaces is not null && block.Data.Spaces.Count > 0)
-        {
-            embedded_data["spaces"] = block.Data.Spaces;
-        }
-
-        if (block.Data.Typologies is not null && block.Data.Typologies.Count > 0)
-        {
-            embedded_data["typologies"] = block.Data.Typologies;
-        }
-
-        if (block.Data.Pois is not null && block.Data.Pois.Count > 0)
-        {
-            embedded_data["pois"] = block.Data.Pois;
-        }
-
-        if (block.Data.Activities is not null && block.Data.Activities.Count > 0)
-        {
-            embedded_data["activities"] = block.Data.Activities;
-        }
-
-        string json = JsonSerializer.Serialize(embedded_data, SerialiserOptions);
+        string json = JsonSerializer.Serialize(block.Data, SerialiserOptions);
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "script");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "type", "application/json");
@@ -105,7 +75,14 @@ public sealed class RenderLeafletMap : IBlockRenderer
     }
 
     /// <summary>
-    /// Renders data-* attributes on the container div with GUID references for client-side resolution (RL-03).
+    /// Reference mode (RL-03): outputs only GUID references and map configuration as data-*
+    /// attributes on the container div. No resolved data is included — the block data at this
+    /// point contains only flat GUID lists as stored by the EditorJS plugin. A hosted JS viewer
+    /// script (separate deliverable, served from community-gateway-www) discovers these
+    /// containers on the page, reads the attributes, and calls the community-gateway-www REST
+    /// API (GW-01 to GW-05) with the developer's chosen locale to fetch the full venue, space,
+    /// typology, POI, and activity details. The locale is NOT a data attribute — it is
+    /// configured by the developer when including the viewer script.
     /// </summary>
     private static void RenderReferenceMode(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
@@ -120,7 +97,7 @@ public sealed class RenderLeafletMap : IBlockRenderer
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-zoom", block.Data.Zoom.Value.ToString());
         }
 
-        if (string.IsNullOrWhiteSpace(block.Data.TileUrl) is false)
+        if (!string.IsNullOrWhiteSpace(block.Data.TileUrl))
         {
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-tile-url", block.Data.TileUrl);
         }
@@ -152,9 +129,8 @@ public sealed class RenderLeafletMap : IBlockRenderer
         // Activity GUIDs — filter out entries with invalid activity or space GUIDs (RL-05)
         if (block.Data.ActivityGuids is not null)
         {
-            List<EditorJsMapActivityReference> valid_activities = block.Data.ActivityGuids
-                .Where(a => IsValidGuid(a.ActivityGuid) is true && IsValidGuid(a.SpaceGuid) is true)
-                .ToList();
+            List<EditorJsMapActivityReference> valid_activities
+                = [.. block.Data.ActivityGuids.Where(a => IsValidGuid(a.ActivityGuid) && IsValidGuid(a.SpaceGuid))];
 
             if (valid_activities.Count > 0)
             {
@@ -167,31 +143,14 @@ public sealed class RenderLeafletMap : IBlockRenderer
     /// <summary>
     /// Filters a list of GUID strings, excluding null, empty, whitespace, and Guid.Empty values.
     /// </summary>
-    private static List<string> FilterValidGuids(List<string>? guids)
-    {
-        if (guids is null)
-        {
-            return [];
-        }
-
-        return guids.Where(g => IsValidGuid(g) is true).ToList();
-    }
+    private static List<string> FilterValidGuids(List<string>? guids) =>
+        guids?.Where(IsValidGuid).ToList() ?? [];
 
     /// <summary>
     /// Checks whether a GUID string is valid (not null, not empty, not whitespace, not Guid.Empty).
     /// </summary>
-    private static bool IsValidGuid(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return false;
-        }
-
-        if (Guid.TryParse(value, out Guid parsed) is false)
-        {
-            return false;
-        }
-
-        return parsed.Equals(EmptyGuid) is false;
-    }
+    private static bool IsValidGuid(string? value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && Guid.TryParse(value, out Guid parsed)
+        && !parsed.Equals(EmptyGuid);
 }

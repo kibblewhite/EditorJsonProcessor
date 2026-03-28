@@ -18,7 +18,7 @@
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<NoWarn Label="EditorJsonToHtmlConverter.xml">CS1591</NoWarn>
+		<NoWarn>CS1591;CA1873;</NoWarn>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<IsPackable>true</IsPackable>
 	</PropertyGroup>

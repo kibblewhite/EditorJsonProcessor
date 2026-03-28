@@ -25,14 +25,9 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
         ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode);
         string fragment = await RenderComponentAsHtmlAsync<EjsRenderFragment>(parameters);
 
-        if (strip_html is false)
-        {
-            return fragment;
-        }
-
-        Regex tags_expression = StripHtmlRegex();
-        string striped_fragement = tags_expression.Replace(fragment, string.Empty);
-        return WebUtility.HtmlDecode(striped_fragement);
+        return strip_html
+            ? WebUtility.HtmlDecode(StripHtmlRegex().Replace(fragment, string.Empty))
+            : fragment;
     }
 
     /// <summary>
@@ -54,18 +49,13 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
     /// <param name="styling_map">The JSON string representing the styling map. Default is an empty array.</param>
     /// <param name="data_retrieval_mode">Controls whether leaflet-map blocks render embedded data or GUID references.</param>
     /// <returns>A ParameterView containing the parameters for the component.</returns>
-    private static ParameterView BuildParameters(string value, string? styling_map = "[]", DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded)
-    {
-        Dictionary<string, object?> dictionary = new()
+    private static ParameterView BuildParameters(string value, string? styling_map = "[]", DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded) =>
+        ParameterView.FromDictionary(new Dictionary<string, object?>
         {
             { nameof(EjsRenderFragment.Value), value },
             { nameof(EjsRenderFragment.StylingMap), styling_map },
             { nameof(EjsRenderFragment.DataRetrievalMode), data_retrieval_mode }
-        };
-
-        ParameterView parameters = ParameterView.FromDictionary(dictionary);
-        return parameters;
-    }
+        });
 
     /// <summary>
     /// Renders the component as an HTML root component asynchronously.
@@ -74,7 +64,7 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
     /// <param name="parameters">The parameters to pass to the component.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the rendered HTML root component.</returns>
     private Task<HtmlRootComponent> RenderComponentAsHtmlRootComponentAsync<T>(ParameterView parameters) where T : IComponent =>
-        _html_renderer.Dispatcher.InvokeAsync(async () => await _html_renderer.RenderComponentAsync<T>(parameters));
+        _html_renderer.Dispatcher.InvokeAsync(() => _html_renderer.RenderComponentAsync<T>(parameters));
 
     /// <summary>
     /// Renders the component as an HTML string asynchronously.

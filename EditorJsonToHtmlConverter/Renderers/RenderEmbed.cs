@@ -2,6 +2,7 @@
 
 public sealed class RenderEmbed : IBlockRenderer
 {
+    private static readonly SearchValues<char> s_gist_id_allowed_chars = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-");
     /// <summary>
     /// Renders the "Embed" block.
     /// </summary>
@@ -273,7 +274,7 @@ public sealed class RenderEmbed : IBlockRenderer
         }
 
         string id = segments[^1].Trim('/');
-        return id.Length > 0 && id.AsSpan().IndexOfAnyExcept("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-") < 0
+        return id.Length > 0 && id.AsSpan().IndexOfAnyExcept(s_gist_id_allowed_chars) < 0
             ? id
             : string.Empty;
     }
@@ -293,23 +294,13 @@ public sealed class RenderEmbed : IBlockRenderer
     }
 
     // Helper method to extract Pinterest Pin ID from source URL
-    private static string GetPinterestPinIdFromSource(string? source)
-    {
+    private static string GetPinterestPinIdFromSource(string? source) =>
         // Implement logic to extract Pinterest Pin ID from the source URL
         // Assuming source is a valid Pinterest Pin URL in the format mentioned in the JavaScript code
         // Example: https://www.pinterest.com/pin/123456789/
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.Last().Trim('/');
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? uri.Segments.Last().Trim('/')
+            : string.Empty;
 
     private static void RenderCodePenEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -321,29 +312,19 @@ public sealed class RenderEmbed : IBlockRenderer
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "frameborder", "no");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "allowtransparency", "true");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "allowfullscreen", "true");
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "style", "width: 100%;");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "style", width == 0 ? "width: 100%;" : $"width: {width}px;");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "src", $"https://codepen.io/{ids[0]}/embed/{ids[1]}?height={height}&theme-id=0&default-tab=css,result&embed-version=2");
         render_tree_builder.Builder.CloseElement(); // Close the iframe element
     }
 
     // Helper method to extract CodePen IDs from source URL
-    private static string[] GetCodePenIdsFromSource(string? source)
-    {
+    private static string[] GetCodePenIdsFromSource(string? source) =>
         // Implement logic to extract CodePen IDs from the source URL
         // Assuming source is a valid CodePen URL in the format mentioned in the JavaScript code
         // Example: https://codepen.io/username/pen/abcdef123456
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return [];
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return [];
-        }
-
-        return [.. uri.Segments.SkipWhile(s => s.Trim('/') != "pen").Skip(1).Take(2)];
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? [.. uri.Segments.SkipWhile(s => s.Trim('/') != "pen").Skip(1).Take(2)]
+            : [];
 
     private static void RenderAparatEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -351,7 +332,7 @@ public sealed class RenderEmbed : IBlockRenderer
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "src", $"https://www.aparat.com/video/video/embed/videohash/{aparatVideoId}/vt/frame");
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", "100%");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", width == 0 ? "100%" : $"{width}px");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "height", height);
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "style", "margin: 0 auto;");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "frameborder", "0");
@@ -361,23 +342,13 @@ public sealed class RenderEmbed : IBlockRenderer
     }
 
     // Helper method to extract Aparat video ID from source URL
-    private static string GetAparatVideoIdFromSource(string? source)
-    {
+    private static string GetAparatVideoIdFromSource(string? source) =>
         // Implement logic to extract Aparat video ID from the source URL
         // Assuming source is a valid Aparat URL in the format mentioned in the JavaScript code
         // Example: https://www.aparat.com/v/abcdef123456
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri)
+            ? uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty
+            : string.Empty;
 
     private static void RenderVineEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -385,7 +356,7 @@ public sealed class RenderEmbed : IBlockRenderer
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "src", $"https://vine.co/v/{vineId}/embed/simple/");
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", "100%");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", width == 0 ? "100%" : $"{width}px");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "height", height);
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "frameborder", "0");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "allowfullscreen", "true");
@@ -393,23 +364,13 @@ public sealed class RenderEmbed : IBlockRenderer
     }
 
     // Helper method to extract Vine ID from source URL
-    private static string GetVineIdFromSource(string? source)
-    {
+    private static string GetVineIdFromSource(string? source) =>
         // Implement logic to extract Vine ID from the source URL
         // Assuming source is a valid Vine URL in the format mentioned in the JavaScript code
         // Example: https://vine.co/v/abcdef123456
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty
+            : string.Empty;
 
     private static void RenderImgurEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -417,7 +378,7 @@ public sealed class RenderEmbed : IBlockRenderer
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "src", $"http://imgur.com/{imgurId}/embed");
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", "100%");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", width == 0 ? "100%" : $"{width}px");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "height", height);
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "allowfullscreen", "true");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "scrolling", "no");
@@ -426,23 +387,13 @@ public sealed class RenderEmbed : IBlockRenderer
     }
 
     // Helper method to extract Imgur ID from source URL
-    private static string GetImgurIdFromSource(string? source)
-    {
+    private static string GetImgurIdFromSource(string? source) =>
         // Implement logic to extract Imgur ID from the source URL
         // Assuming source is a valid Imgur URL in the format mentioned in the JavaScript code
         // Example: https://imgur.com/abcdef123456
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty
+            : string.Empty;
 
     private static void RenderGfycatEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -459,23 +410,13 @@ public sealed class RenderEmbed : IBlockRenderer
     }
 
     // Helper method to extract Gfycat ID from source URL
-    private static string GetGfycatIdFromSource(string? source)
-    {
+    private static string GetGfycatIdFromSource(string? source) =>
         // Implement logic to extract Gfycat ID from the source URL
         // Assuming source is a valid Gfycat URL in the format mentioned in the JavaScript code
         // Example: https://gfycat.com/gifs/detail/abcdef1234567890
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty
+            : string.Empty;
 
     private static void RenderMiroEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -493,23 +434,13 @@ public sealed class RenderEmbed : IBlockRenderer
     }
 
     // Helper method to extract Miro Board ID from source URL
-    private static string GetBoardIdFromMiroSource(string? source)
-    {
+    private static string GetBoardIdFromMiroSource(string? source) =>
         // Implement logic to extract Miro Board ID from the source URL
         // Assuming source is a valid Miro Board URL in the format mentioned in the JavaScript code
         // Example: https://miro.com/app/board/abcdef1234567890/
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty
+            : string.Empty;
 
     private static void RenderTwitchChannelEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -527,23 +458,13 @@ public sealed class RenderEmbed : IBlockRenderer
     }
 
     // Helper method to extract Twitch Channel name from source URL
-    private static string GetChannelNameFromTwitchSource(string? source)
-    {
+    private static string GetChannelNameFromTwitchSource(string? source) =>
         // Implement logic to extract Twitch Channel name from the source URL
         // Assuming source is a valid Twitch Channel URL in the format mentioned in the JavaScript code
         // Example: https://www.twitch.tv/username
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty
+            : string.Empty;
 
     // Helper method to render Twitch Video embed
     private static void RenderTwitchVideoEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
@@ -670,7 +591,7 @@ public sealed class RenderEmbed : IBlockRenderer
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "src", $"https://coub.com/embed/{coubVideoId}");
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", "100%");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "width", width == 0 ? "100%" : width);
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "height", height);
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "style", "margin: 0 auto;");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "frameborder", "0");
@@ -679,23 +600,13 @@ public sealed class RenderEmbed : IBlockRenderer
     }
 
     // Helper method to extract Coub video ID from source URL
-    private static string GetCoubVideoIdFromSource(string? source)
-    {
+    private static string GetCoubVideoIdFromSource(string? source) =>
         // Implement logic to extract Coub video ID from the source URL
         // Assuming source is a valid Coub URL in the format mentioned in the JavaScript code
         // Example: https://coub.com/view/abcdef123456
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty
+            : string.Empty;
 
     private static void RenderVimeoEmbed(CustomRenderTreeBuilder render_tree_builder, string? source, int width, int height)
     {
@@ -762,21 +673,11 @@ public sealed class RenderEmbed : IBlockRenderer
     /// </summary>
     /// <param name="source"></param>
     /// <returns></returns>
-    private static string GetRemoteIdFromVimeoSource(string? source)
-    {
+    private static string GetRemoteIdFromVimeoSource(string? source) =>
         // Handles: https://vimeo.com/123456789
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return string.Empty;
-        }
-
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return string.Empty;
-        }
-
-        return uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty;
-    }
+        string.IsNullOrWhiteSpace(source) is false && Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && uri is not null
+            ? uri.Segments.LastOrDefault()?.Trim('/') ?? string.Empty
+            : string.Empty;
 
     /// <summary>
     /// Helper method to extract YouTube remote ID from source URL
@@ -791,10 +692,11 @@ public sealed class RenderEmbed : IBlockRenderer
             return string.Empty;
         }
 
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+        if (Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) is false || uri is null)
         {
             return string.Empty;
         }
+
         if (uri.Host.Contains("youtu.be"))
         {
             return uri.Segments.Last().Trim('/');

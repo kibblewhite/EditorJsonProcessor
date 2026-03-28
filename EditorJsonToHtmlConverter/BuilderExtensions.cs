@@ -10,8 +10,8 @@ public static class BuilderExtensions
     /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
     public static IServiceCollection AddScopedEditorJsonProcessorServices(this IServiceCollection services)
     {
-        services.AddScoped<HtmlRenderer>();
-        services.AddScoped<EjsHtmlRenderer>();
+        _ = services.AddScoped<HtmlRenderer>();
+        _ = services.AddScoped<EjsHtmlRenderer>();
         return services;
     }
 }

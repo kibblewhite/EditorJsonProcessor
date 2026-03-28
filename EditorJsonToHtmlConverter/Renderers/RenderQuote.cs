@@ -19,13 +19,11 @@ public sealed class RenderQuote : IBlockRenderer
         {
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "class", $"text-{alignment} {css.Style}");
         }
-
-        if (css is not null && string.IsNullOrEmpty(alignment))
+        else if (css is not null)
         {
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "class", css.Style);
         }
-
-        if (css is null && !string.IsNullOrEmpty(alignment))
+        else if (!string.IsNullOrEmpty(alignment))
         {
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "class", $"text-{alignment}");
         }

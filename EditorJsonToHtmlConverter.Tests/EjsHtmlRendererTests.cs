@@ -93,25 +93,16 @@ public class EjsHtmlRendererTests
         // Arrange
         string invalidJsonValue = "Invalid JSON";
 
-        try
-        {
-            // Act
-            await _ejs_html_renderer.ParseAsync(invalidJsonValue);
+        // Act & Assert
+        JsonException ex = await Assert.ThrowsExactlyAsync<JsonException>(
+            () => _ejs_html_renderer.ParseAsync(invalidJsonValue));
 
-            // Fail the test if no exception is thrown
-            Assert.Fail("Expected a JsonException to be thrown, but no exception was thrown.");
-        }
-        catch (JsonException ex)
-        {
-            TestContext.WriteLine("Exception caught:");
-            TestContext.WriteLine($"Message: {ex.Message}");
-            TestContext.WriteLine($"Path: {ex.Path}");
-            TestContext.WriteLine($"Line number: {ex.LineNumber}");
-            TestContext.WriteLine($"Byte position in line: {ex.BytePositionInLine}");
+        TestContext.WriteLine("Exception caught:");
+        TestContext.WriteLine($"Message: {ex.Message}");
+        TestContext.WriteLine($"Path: {ex.Path}");
+        TestContext.WriteLine($"Line number: {ex.LineNumber}");
+        TestContext.WriteLine($"Byte position in line: {ex.BytePositionInLine}");
 
-            // Assert
-            Assert.IsNotNull(ex, "Exception should not be null.");
-            Assert.AreEqual("'I' is an invalid start of a value. Path: $ | LineNumber: 0 | BytePositionInLine: 0.", ex.Message);
-        }
+        Assert.AreEqual("'I' is an invalid start of a value. Path: $ | LineNumber: 0 | BytePositionInLine: 0.", ex.Message);
     }
 }

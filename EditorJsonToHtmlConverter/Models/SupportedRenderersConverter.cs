@@ -8,7 +8,7 @@ public class SupportedRenderersConverter : JsonConverter<SupportedRenderers>
     {
         if (reader.TokenType == JsonTokenType.String)
         {
-            string? enum_string = reader.GetString()?.Replace("-", string.Empty);
+            string? enum_string = reader.GetString();
             if (Enum.TryParse(enum_string, true, out SupportedRenderers result))
             {
                 return result;

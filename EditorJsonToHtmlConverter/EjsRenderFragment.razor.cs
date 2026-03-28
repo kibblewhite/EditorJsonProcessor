@@ -54,7 +54,7 @@ public partial class EjsRenderFragment : ComponentBase
 
     private void BuildChildRenderFragment()
     {
-        if (ChildRenderFragmentBuilt is true || string.IsNullOrWhiteSpace(Value))
+        if (ChildRenderFragmentBuilt || string.IsNullOrWhiteSpace(Value))
         {
             return;
         }
@@ -69,15 +69,14 @@ public partial class EjsRenderFragment : ComponentBase
     /// </summary>
     private RenderFragment ConvertJsonToRenderFragment => builder =>
     {
-        EditorJsBlocks? blocks = null;
-        IEnumerable<EditorJsStylingMap>? editor_js_styling_map;
+        EditorJsBlocks blocks;
+        IEnumerable<EditorJsStylingMap> editor_js_styling_map;
 
         try
         {
-            blocks = JsonSerializer.Deserialize<EditorJsBlocks>(Value);
-            ArgumentNullException.ThrowIfNull(blocks, nameof(blocks));
+            blocks = JsonSerializer.Deserialize<EditorJsBlocks>(Value) ?? throw new JsonException("Deserialised EditorJsBlocks was null.");
         }
-        catch (Exception ex)
+        catch (JsonException ex)
         {
             Logger.LogError("Deserialise EditorJsBlocks Failed: {Exception}", ex.Message);
             throw;
@@ -85,10 +84,9 @@ public partial class EjsRenderFragment : ComponentBase
 
         try
         {
-            editor_js_styling_map = JsonSerializer.Deserialize<IEnumerable<EditorJsStylingMap>>(StylingMap);
-            ArgumentNullException.ThrowIfNull(editor_js_styling_map, nameof(editor_js_styling_map));
+            editor_js_styling_map = JsonSerializer.Deserialize<IEnumerable<EditorJsStylingMap>>(StylingMap) ?? [];
         }
-        catch (Exception ex)
+        catch (JsonException ex)
         {
             Logger.LogError("Deserialise EditorJsStylingMap Failed: {Exception}", ex.Message);
             Logger.LogError("StylingMap: {StylingMap}", StylingMap);
@@ -109,7 +107,7 @@ public partial class EjsRenderFragment : ComponentBase
                 RenderBlock(custom_render_tree_builder, block);
             }
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             Logger.LogTrace("RenderBlock Failed or was null value: {Exception}", ex.Message);
             return;
@@ -123,8 +121,7 @@ public partial class EjsRenderFragment : ComponentBase
     /// <param name="block">The EditorJS block to render.</param>
     internal static void RenderBlock(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string normalised_type = block.Type.Replace("-", string.Empty);
-        if (Enum.TryParse(normalised_type, true, out SupportedRenderers renderer) is false)
+        if (!Enum.TryParse(block.Type, true, out SupportedRenderers renderer))
         {
             return;
         }
