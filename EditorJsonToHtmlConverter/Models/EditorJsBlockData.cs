@@ -186,7 +186,7 @@ public sealed class EditorJsBlockData : IEditorJsEntity<EditorJsBlockData>
     [JsonPropertyName("activityGuids")]
     public List<EditorJsMapActivityReference>? ActivityGuids { get; set; }
 
-    // Leaflet-map resolved data (populated by MW-13 for embedded mode)
+    // Leaflet-map resolved data (populated by the GUID resolver for embedded mode)
 
     /// <summary>
     /// Gets or sets the resolved venue data for leaflet-map blocks in embedded mode.

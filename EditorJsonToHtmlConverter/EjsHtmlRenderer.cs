@@ -5,10 +5,12 @@
 /// </summary>
 /// <param name="html_renderer">The HtmlRenderer instance used to render the components.</param>
 /// <param name="data_retrieval_mode">Controls whether leaflet-map blocks render embedded data or GUID references. Defaults to Embedded.</param>
-public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded)
+/// <param name="locale">The locale used for rendering. In Reference mode, output as a data-locale attribute on leaflet-map containers. Defaults to null (omitted). Invalid culture values are silently ignored.</param>
+public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded, CultureInfo? locale = null)
 {
     private readonly HtmlRenderer _html_renderer = html_renderer;
     private readonly DataRetrievalMode _data_retrieval_mode = data_retrieval_mode;
+    private readonly CultureInfo? _locale = locale;
 
     [GeneratedRegex(@"</?.+?>")]
     private static partial Regex StripHtmlRegex();
@@ -22,7 +24,7 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
     /// <returns>A task that represents the asynchronous operation. The task result contains the generated HTML string.</returns>
     public async Task<string> ParseAsync(string value, bool strip_html = false, string? styling_map = "[]")
     {
-        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode);
+        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode, _locale);
         string fragment = await RenderComponentAsHtmlAsync<EjsRenderFragment>(parameters);
 
         return strip_html
@@ -38,7 +40,7 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
     /// <returns>A task that represents the asynchronous operation. The task result contains the generated HTML root component.</returns>
     public async Task<HtmlRootComponent> ParseAsHtmlRootComponentAsync(string value, string? styling_map = "[]")
     {
-        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode);
+        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode, _locale);
         return await RenderComponentAsHtmlRootComponentAsync<EjsRenderFragment>(parameters);
     }
 
@@ -48,13 +50,15 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
     /// <param name="value">The JSON output from the EditorJS block editor.</param>
     /// <param name="styling_map">The JSON string representing the styling map. Default is an empty array.</param>
     /// <param name="data_retrieval_mode">Controls whether leaflet-map blocks render embedded data or GUID references.</param>
+    /// <param name="locale">The locale for rendering. In Reference mode, output as data-locale on leaflet-map containers. Null means omitted.</param>
     /// <returns>A ParameterView containing the parameters for the component.</returns>
-    private static ParameterView BuildParameters(string value, string? styling_map = "[]", DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded) =>
+    private static ParameterView BuildParameters(string value, string? styling_map = "[]", DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded, CultureInfo? locale = null) =>
         ParameterView.FromDictionary(new Dictionary<string, object?>
         {
             { nameof(EjsRenderFragment.Value), value },
             { nameof(EjsRenderFragment.StylingMap), styling_map },
-            { nameof(EjsRenderFragment.DataRetrievalMode), data_retrieval_mode }
+            { nameof(EjsRenderFragment.DataRetrievalMode), data_retrieval_mode },
+            { nameof(EjsRenderFragment.Locale), locale }
         });
 
     /// <summary>

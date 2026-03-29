@@ -3,19 +3,18 @@ namespace EditorJsonToHtmlConverter.Renderers;
 /// <summary>
 /// Renders a leaflet-map block as an HTML container element. Two rendering modes exist:
 ///
-/// <b>Embedded mode</b> (internal/management-www): MW-13 resolves all GUID references to
-/// full localised objects <i>before</i> the renderer runs. The block data already contains
+/// <b>Embedded mode:</b> The consuming application resolves all GUID references to full
+/// localised objects <i>before</i> the renderer runs. The block data already contains
 /// complete venue, space, typology, POI, and activity details. The renderer serialises the
 /// entire block data into a child <c>&lt;script type="application/json"&gt;</c> element.
 /// The client JS reads this self-contained JSON and renders the map immediately — no further
 /// API calls are needed.
 ///
-/// <b>Reference mode</b> (external/community-gateway-www): The block data contains only
-/// flat GUID lists and map configuration (centre, zoom, tile URL, height). The renderer
-/// outputs these as <c>data-*</c> attributes on the container <c>&lt;div&gt;</c>. A hosted
-/// JS viewer script (served from community-gateway-www) discovers the container, reads the
-/// attributes, and makes HTTPS calls to the GW-01 to GW-05 REST API endpoints with the
-/// developer's chosen locale to fetch the full data. The map renders after those calls complete.
+/// <b>Reference mode:</b> The block data contains only flat GUID lists and map configuration
+/// (centre, zoom, tile URL, height, locale). The renderer outputs these as <c>data-*</c>
+/// attributes on the container <c>&lt;div&gt;</c>. A client-side JS viewer discovers the
+/// container, reads the attributes, and fetches full data from API endpoints using the locale
+/// specified in <c>data-locale</c>. The map renders after those calls complete.
 ///
 /// Does not inject any <c>&lt;script&gt;</c> or <c>&lt;link&gt;</c> tags — that is the
 /// consuming developer's responsibility.
@@ -58,8 +57,8 @@ public sealed class RenderLeafletMap : IBlockRenderer
     }
 
     /// <summary>
-    /// Renders a child script element containing the complete block data as JSON (RL-02).
-    /// MW-13 resolves all GUIDs to full objects before rendering, so block.Data contains
+    /// Renders a child script element containing the complete block data as JSON.
+    /// The GUID resolver resolves all GUIDs to full objects before rendering, so block.Data contains
     /// map configuration, resolved venues, spaces, typologies, POIs, and activities with
     /// all localised fields. The client JS reads this and has everything needed to render
     /// the map immediately without further API calls.
@@ -75,17 +74,19 @@ public sealed class RenderLeafletMap : IBlockRenderer
     }
 
     /// <summary>
-    /// Reference mode (RL-03): outputs only GUID references and map configuration as data-*
+    /// Reference mode: outputs GUID references, map configuration, and locale as <c>data-*</c>
     /// attributes on the container div. No resolved data is included — the block data at this
-    /// point contains only flat GUID lists as stored by the EditorJS plugin. A hosted JS viewer
-    /// script (separate deliverable, served from community-gateway-www) discovers these
-    /// containers on the page, reads the attributes, and calls the community-gateway-www REST
-    /// API (GW-01 to GW-05) with the developer's chosen locale to fetch the full venue, space,
-    /// typology, POI, and activity details. The locale is NOT a data attribute — it is
-    /// configured by the developer when including the viewer script.
+    /// point contains only flat GUID lists as stored by the EditorJS plugin. A client-side JS
+    /// viewer discovers these containers, reads the attributes, and fetches full venue, space,
+    /// typology, POI, and activity details from API endpoints using the <c>data-locale</c> value.
     /// </summary>
     private static void RenderReferenceMode(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
+        if (render_tree_builder.Locale is not null)
+        {
+            render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-locale", render_tree_builder.Locale.Name);
+        }
+
         if (block.Data.Center is not null)
         {
             string center_json = JsonSerializer.Serialize(new { lat = block.Data.Center.Lat, lng = block.Data.Center.Lng }, SerialiserOptions);
@@ -107,7 +108,7 @@ public sealed class RenderLeafletMap : IBlockRenderer
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-height", block.Data.Height.Value.ToString());
         }
 
-        // GUID lists — filter out null, empty, whitespace, and Guid.Empty values (RL-05)
+        // GUID lists — filter out null, empty, whitespace, and Guid.Empty values
         List<string> venue_guids = FilterValidGuids(block.Data.VenueGuids);
         if (venue_guids.Count > 0)
         {
@@ -126,7 +127,7 @@ public sealed class RenderLeafletMap : IBlockRenderer
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-typology-guids", string.Join(",", typology_guids));
         }
 
-        // Activity GUIDs — filter out entries with invalid activity or space GUIDs (RL-05)
+        // Activity GUIDs — filter out entries with invalid activity or space GUIDs
         if (block.Data.ActivityGuids is not null)
         {
             List<EditorJsMapActivityReference> valid_activities
@@ -150,7 +151,7 @@ public sealed class RenderLeafletMap : IBlockRenderer
     /// Checks whether a GUID string is valid (not null, not empty, not whitespace, not Guid.Empty).
     /// </summary>
     private static bool IsValidGuid(string? value) =>
-        !string.IsNullOrWhiteSpace(value)
+        string.IsNullOrWhiteSpace(value) is false
         && Guid.TryParse(value, out Guid parsed)
-        && !parsed.Equals(EmptyGuid);
+        && parsed.Equals(EmptyGuid) is false;
 }
