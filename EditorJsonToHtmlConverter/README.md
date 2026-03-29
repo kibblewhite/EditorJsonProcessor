@@ -20,33 +20,49 @@ This registers both `Microsoft.AspNetCore.Components.Web.HtmlRenderer` and `EjsH
 
 ### EjsHtmlRenderer (Server-Side)
 
-Inject `EjsHtmlRenderer` and call one of its parse methods:
+Inject `HtmlRenderer` and construct `EjsHtmlRenderer` with the desired mode and locale:
 
 ```csharp
 string editor_json = "{ ... }";
 
-// Render as HTML string
-string html = await EjsHtmlRenderer.ParseAsync(editor_json);
+// Default: Embedded mode, no locale
+EjsHtmlRenderer renderer = new(htmlRenderer);
+string html = await renderer.ParseAsync(editor_json);
 
-// Render as plain text (HTML tags stripped)
-string plain_text = await EjsHtmlRenderer.ParseAsync(editor_json, strip_html: true);
+// Plain text (HTML tags stripped)
+string plain_text = await renderer.ParseAsync(editor_json, strip_html: true);
 
-// Render with custom styling
-string styled_html = await EjsHtmlRenderer.ParseAsync(editor_json, styling_map: styling_json);
+// Custom styling
+string styled_html = await renderer.ParseAsync(editor_json, styling_map: styling_json);
 
-// Render as HtmlRootComponent
-HtmlRootComponent root = await EjsHtmlRenderer.ParseAsHtmlRootComponentAsync(editor_json);
+// Reference mode with locale — block renderers can use the locale for
+// locale-aware output (e.g. data-locale attributes for client-side hydration)
+CultureInfo locale = new("en-GB");
+EjsHtmlRenderer reference_renderer = new(htmlRenderer, DataRetrievalMode.Reference, locale);
+string reference_html = await reference_renderer.ParseAsync(editor_json);
+
+// HtmlRootComponent
+HtmlRootComponent root = await renderer.ParseAsHtmlRootComponentAsync(editor_json);
 ```
+
+**Constructor parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `html_renderer` | `HtmlRenderer` | *(required)* | Blazor HtmlRenderer instance |
+| `data_retrieval_mode` | `DataRetrievalMode` | `Embedded` | Controls leaflet-map rendering mode |
+| `locale` | `CultureInfo?` | `null` | Locale for rendering. Available to block renderers for locale-aware output (e.g. `data-locale` attributes). Invalid cultures are silently ignored. |
 
 ### EjsRenderFragment (Razor Component)
 
 ```razor
 <EjsRenderFragment Value="@editor_json" />
 
-<!-- With optional styling and data retrieval mode -->
+<!-- With optional styling, data retrieval mode, and locale -->
 <EjsRenderFragment Value="@editor_json"
                    StylingMap="@styling_json"
-                   DataRetrievalMode="DataRetrievalMode.Reference" />
+                   DataRetrievalMode="DataRetrievalMode.Reference"
+                   Locale="@(new CultureInfo("en-GB"))" />
 ```
 
 **Parameters:**
@@ -56,6 +72,7 @@ HtmlRootComponent root = await EjsHtmlRenderer.ParseAsHtmlRootComponentAsync(edi
 | `Value` | `string` | *(required)* | Editor.js JSON output |
 | `StylingMap` | `string` | `"[]"` | JSON array defining CSS class mappings per block type |
 | `DataRetrievalMode` | `DataRetrievalMode` | `Embedded` | Controls leaflet-map rendering mode |
+| `Locale` | `CultureInfo?` | `null` | Locale for rendering. Available to block renderers for locale-aware output. |
 
 ## Supported Block Types
 
@@ -82,8 +99,8 @@ Vimeo, YouTube, Coub, Facebook, Instagram, Twitter, Twitch (channel & video), Mi
 
 Controls how `leaflet-map` blocks render their data:
 
-- **`Embedded`** -- Outputs resolved data as a `<script type="application/json">` child element inside the map div. Suitable when data is resolved server-side.
-- **`Reference`** -- Outputs `data-*` attributes with GUID references on the map div, deferring data resolution to client-side JavaScript.
+- **`Embedded`** -- Outputs resolved data as a `<script type="application/json">` child element inside the map div. The consuming application resolves all GUID references to full data objects before rendering. The client reads the self-contained JSON and renders immediately without further API calls.
+- **`Reference`** -- Outputs `data-*` attributes with GUID references and configuration on the container element, deferring data resolution to client-side JavaScript. Block renderers may use the `Locale` to output a `data-locale` attribute for locale-aware API calls. When `Locale` is null, locale-dependent attributes are omitted.
 
 ## CSS Styling Map
 
