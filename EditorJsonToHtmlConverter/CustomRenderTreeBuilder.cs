@@ -24,9 +24,8 @@ public class CustomRenderTreeBuilder
     public required DataRetrievalMode DataRetrievalMode { get; init; }
 
     /// <summary>
-    /// The locale for rendering. In Reference mode, output as a <c>data-locale</c> attribute
-    /// on leaflet-map containers so the JS viewer knows which locale to use for API calls.
-    /// Null means the attribute is omitted.
+    /// The locale for rendering. Available to block renderers for locale-aware output
+    /// (e.g. <c>data-locale</c> attributes for client-side hydration). Null means omitted.
     /// </summary>
     public CultureInfo? Locale { get; init; }
 

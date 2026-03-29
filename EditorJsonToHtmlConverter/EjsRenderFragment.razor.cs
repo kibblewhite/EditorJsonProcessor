@@ -33,9 +33,8 @@ public partial class EjsRenderFragment : ComponentBase
     public DataRetrievalMode DataRetrievalMode { get; set; } = DataRetrievalMode.Embedded;
 
     /// <summary>
-    /// Gets or sets the locale for rendering. In Reference mode, this is output as a
-    /// data-locale attribute on leaflet-map containers so the JS viewer knows which
-    /// locale to use for API calls. Null means the attribute is omitted.
+    /// Gets or sets the locale for rendering. Available to block renderers for locale-aware
+    /// output (e.g. data-locale attributes for client-side hydration). Null means omitted.
     /// </summary>
     [Parameter]
     public CultureInfo? Locale { get; set; }
