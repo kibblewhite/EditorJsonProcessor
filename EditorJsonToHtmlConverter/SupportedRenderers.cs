@@ -42,6 +42,6 @@ public enum SupportedRenderers
     [StringValue(nameof(Text))]
     Text,
 
-    [StringValue(nameof(LeafletMap))]
-    LeafletMap
+    [StringValue(nameof(Map))]
+    Map
 }

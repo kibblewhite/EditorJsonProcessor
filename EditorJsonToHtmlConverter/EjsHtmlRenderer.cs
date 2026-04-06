@@ -4,7 +4,7 @@
 /// Renders the EjsRenderFragment component as HTML using a provided HtmlRenderer.
 /// </summary>
 /// <param name="html_renderer">The HtmlRenderer instance used to render the components.</param>
-/// <param name="data_retrieval_mode">Controls whether leaflet-map blocks render embedded data or GUID references. Defaults to Embedded.</param>
+/// <param name="data_retrieval_mode">Controls whether map blocks render embedded data or GUID references. Defaults to Embedded.</param>
 /// <param name="locale">The locale used for rendering. Available to block renderers for locale-aware output (e.g. data-locale attributes). Defaults to null (omitted).</param>
 public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded, CultureInfo? locale = null)
 {
@@ -49,7 +49,7 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
     /// </summary>
     /// <param name="value">The JSON output from the EditorJS block editor.</param>
     /// <param name="styling_map">The JSON string representing the styling map. Default is an empty array.</param>
-    /// <param name="data_retrieval_mode">Controls whether leaflet-map blocks render embedded data or GUID references.</param>
+    /// <param name="data_retrieval_mode">Controls whether map blocks render embedded data or GUID references.</param>
     /// <param name="locale">The locale for rendering. Available to block renderers for locale-aware output. Null means omitted.</param>
     /// <returns>A ParameterView containing the parameters for the component.</returns>
     private static ParameterView BuildParameters(string value, string? styling_map = "[]", DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded, CultureInfo? locale = null) =>

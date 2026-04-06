@@ -1,0 +1,24 @@
+@page "/"
+
+<PageTitle>EditorJsonProcessor Demo</PageTitle>
+
+<h1>EditorJsonToHtmlConverter — Map Block Rendering</h1>
+<p>This demo showcases the two rendering modes for <code>map</code> blocks produced by the EditorJS leaflet-map plugin.</p>
+
+<div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+    <a href="/embedded" style="flex: 1; display: block; padding: 1.5rem; border: 1px solid #dee2e6; border-radius: 6px; text-decoration: none; color: inherit; background: #fff;">
+        <h3 style="margin: 0 0 0.5rem 0;">Embedded Mode</h3>
+        <p style="margin: 0; color: #495057; font-size: 0.875rem;">
+            Full resolved data (venues, spaces, POIs, activities with coordinates and geometry)
+            is serialised as a child <code>&lt;script type="application/json"&gt;</code> element.
+            The client renders immediately without API calls.
+        </p>
+    </a>
+    <a href="/reference" style="flex: 1; display: block; padding: 1.5rem; border: 1px solid #dee2e6; border-radius: 6px; text-decoration: none; color: inherit; background: #fff;">
+        <h3 style="margin: 0 0 0.5rem 0;">Reference Mode</h3>
+        <p style="margin: 0; color: #495057; font-size: 0.875rem;">
+            GUID references and map configuration are output as <code>data-*</code> attributes.
+            The viewer JS discovers the container and fetches full data from mock API endpoints at runtime.
+        </p>
+    </a>
+</div>

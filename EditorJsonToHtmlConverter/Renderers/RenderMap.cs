@@ -1,7 +1,7 @@
 namespace EditorJsonToHtmlConverter.Renderers;
 
 /// <summary>
-/// Renders a leaflet-map block as an HTML container element. Two rendering modes exist:
+/// Renders a map block as an HTML container element. Two rendering modes exist:
 ///
 /// <b>Embedded mode:</b> The consuming application resolves all GUID references to full
 /// localised objects <i>before</i> the renderer runs. The block data already contains
@@ -19,7 +19,7 @@ namespace EditorJsonToHtmlConverter.Renderers;
 /// Does not inject any <c>&lt;script&gt;</c> or <c>&lt;link&gt;</c> tags — that is the
 /// consuming developer's responsibility.
 /// </summary>
-public sealed class RenderLeafletMap : IBlockRenderer
+public sealed class RenderMap : IBlockRenderer
 {
     private static readonly Guid EmptyGuid = Guid.Empty;
     private static readonly JsonSerializerOptions SerialiserOptions = new() { WriteIndented = false };
@@ -30,13 +30,13 @@ public sealed class RenderLeafletMap : IBlockRenderer
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "div");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "id", id);
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-block-type", "leaflet-map");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-block-type", "map");
 
         // CSS styling lookup
         EditorJsStylingMap? css = render_tree_builder.StylingMap
-            .FirstOrDefault(item => item.Type == SupportedRenderers.LeafletMap && item.Id == id);
+            .FirstOrDefault(item => item.Type == SupportedRenderers.Map && item.Id == id);
         css ??= render_tree_builder.StylingMap
-            .FirstOrDefault(item => item.Type == SupportedRenderers.LeafletMap && item.Id == null);
+            .FirstOrDefault(item => item.Type == SupportedRenderers.Map && item.Id == null);
 
         if (css is not null)
         {

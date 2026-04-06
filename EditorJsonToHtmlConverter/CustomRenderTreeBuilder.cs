@@ -18,7 +18,7 @@ public class CustomRenderTreeBuilder
     public required RenderTreeBuilder Builder { get; init; }
 
     /// <summary>
-    /// Controls whether leaflet-map blocks render embedded resolved data or data-* attribute
+    /// Controls whether map blocks render embedded resolved data or data-* attribute
     /// references for external JS viewer hydration.
     /// </summary>
     public required DataRetrievalMode DataRetrievalMode { get; init; }

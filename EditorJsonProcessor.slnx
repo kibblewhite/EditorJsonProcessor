@@ -4,6 +4,8 @@
     <File Path="EditorJsonToHtmlConverter/LICENSE" />
     <File Path="EditorJsonToHtmlConverter/README.md" />
   </Folder>
+  <Project Path="BlazorApp.Client/BlazorApp.Client.csproj" />
+  <Project Path="BlazorApp.Server/BlazorApp.Server.csproj" />
   <Project Path="EditorJsonToHtmlConverter.Tests/EditorJsonToHtmlConverter.Tests.csproj" />
   <Project Path="EditorJsonToHtmlConverter/EditorJsonToHtmlConverter.csproj" />
 </Solution>

@@ -1,7 +1,7 @@
 namespace EditorJsonToHtmlConverter;
 
 /// <summary>
-/// Controls whether the renderer outputs embedded data or GUID references for leaflet-map blocks.
+/// Controls whether the renderer outputs embedded data or GUID references for map blocks.
 /// </summary>
 public enum DataRetrievalMode
 {

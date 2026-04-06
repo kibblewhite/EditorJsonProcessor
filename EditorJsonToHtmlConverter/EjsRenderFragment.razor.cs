@@ -26,7 +26,7 @@ public partial class EjsRenderFragment : ComponentBase
     public required string StylingMap { get; set; } = "[]";
 
     /// <summary>
-    /// Gets or sets the data retrieval mode that controls whether leaflet-map blocks render
+    /// Gets or sets the data retrieval mode that controls whether map blocks render
     /// embedded resolved data or data-* attribute references.
     /// </summary>
     [Parameter]
@@ -169,8 +169,8 @@ public partial class EjsRenderFragment : ComponentBase
             case SupportedRenderers.Text:
                 RenderText.Render(render_tree_builder, block);
                 break;
-            case SupportedRenderers.LeafletMap:
-                RenderLeafletMap.Render(render_tree_builder, block);
+            case SupportedRenderers.Map:
+                RenderMap.Render(render_tree_builder, block);
                 break;
         }
     }

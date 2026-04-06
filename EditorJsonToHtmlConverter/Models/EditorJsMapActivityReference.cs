@@ -1,7 +1,7 @@
 namespace EditorJsonToHtmlConverter.Models;
 
 /// <summary>
-/// Represents an activity GUID reference with a space GUID snapshot, stored in leaflet-map block data.
+/// Represents an activity GUID reference with a space GUID snapshot, stored in map block data.
 /// </summary>
 public sealed class EditorJsMapActivityReference : IEditorJsEntity<EditorJsMapActivityReference>
 {

@@ -50,7 +50,7 @@ HtmlRootComponent root = await renderer.ParseAsHtmlRootComponentAsync(editor_jso
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `html_renderer` | `HtmlRenderer` | *(required)* | Blazor HtmlRenderer instance |
-| `data_retrieval_mode` | `DataRetrievalMode` | `Embedded` | Controls leaflet-map rendering mode |
+| `data_retrieval_mode` | `DataRetrievalMode` | `Embedded` | Controls map block rendering mode |
 | `locale` | `CultureInfo?` | `null` | Locale for rendering. Available to block renderers for locale-aware output (e.g. `data-locale` attributes). Invalid cultures are silently ignored. |
 
 ### EjsRenderFragment (Razor Component)
@@ -71,7 +71,7 @@ HtmlRootComponent root = await renderer.ParseAsHtmlRootComponentAsync(editor_jso
 |---|---|---|---|
 | `Value` | `string` | *(required)* | Editor.js JSON output |
 | `StylingMap` | `string` | `"[]"` | JSON array defining CSS class mappings per block type |
-| `DataRetrievalMode` | `DataRetrievalMode` | `Embedded` | Controls leaflet-map rendering mode |
+| `DataRetrievalMode` | `DataRetrievalMode` | `Embedded` | Controls map block rendering mode |
 | `Locale` | `CultureInfo?` | `null` | Locale for rendering. Available to block renderers for locale-aware output. |
 
 ## Supported Block Types
@@ -89,18 +89,95 @@ HtmlRootComponent root = await renderer.ParseAsHtmlRootComponentAsync(editor_jso
 | `warning` | `<div>` | Bold title and message paragraph |
 | `embed` | `<iframe>` / service-specific | 20 embed services (see below) |
 | `text` | Raw markup | Direct content without a wrapper element |
-| `leaflet-map` | `<div>` | Two rendering modes: Embedded or Reference |
+| `map` | `<div>` | Two rendering modes: Embedded or Reference (see below) |
 
 ### Supported Embed Services
 
 Vimeo, YouTube, Coub, Facebook, Instagram, Twitter, Twitch (channel & video), Miro, Gfycat, Imgur, Vine, Aparat, CodePen, Pinterest, GitHub Gist, Yandex Music (album, track, playlist), and Google Maps.
 
-## DataRetrievalMode
+## Map Block
 
-Controls how `leaflet-map` blocks render their data:
+The `map` block renders an interactive map container for the [editorjs-leaflet](https://byteloch-shared.gitlab.io/libraries/editorjs-leaflet/) plugin. The block data includes map configuration (centre, zoom, tile URL, height), GUID references to venues, spaces, typologies, and activities, and optionally resolved data arrays for embedded mode.
+
+### DataRetrievalMode
+
+Controls how `map` blocks render their data:
 
 - **`Embedded`** -- Outputs resolved data as a `<script type="application/json">` child element inside the map div. The consuming application resolves all GUID references to full data objects before rendering. The client reads the self-contained JSON and renders immediately without further API calls.
 - **`Reference`** -- Outputs `data-*` attributes with GUID references and configuration on the container element, deferring data resolution to client-side JavaScript. Block renderers may use the `Locale` to output a `data-locale` attribute for locale-aware API calls. When `Locale` is null, locale-dependent attributes are omitted.
+
+### Embedded Mode Output
+
+```html
+<div id="block-abc123" data-block-type="map">
+  <script type="application/json">
+  {
+    "center": { "lat": 51.505, "lng": -0.09 },
+    "zoom": 16,
+    "tileUrl": "/tiles/{z}/{x}/{y}.mvt",
+    "height": 600,
+    "venues": [{ "venueGuid": { "value": "..." }, "name": "...", ... }],
+    "spaces": [{ "spaceGuid": { "value": "..." }, "name": "...", ... }],
+    "pois": [{ "poiGuid": { "value": "..." }, "name": "...", "icon": "...", ... }],
+    "activities": [{ "activityGuid": { "value": "..." }, "displayName": "...", ... }]
+  }
+  </script>
+</div>
+```
+
+### Reference Mode Output
+
+```html
+<div id="block-abc123"
+     data-block-type="map"
+     data-locale="en-GB"
+     data-center='{"lat":51.505,"lng":-0.09}'
+     data-zoom="16"
+     data-tile-url="/tiles/{z}/{x}/{y}.mvt"
+     data-height="600"
+     data-venue-guids="00000001-0000-0000-0000-000000000001,00000001-0000-0000-0000-000000000002"
+     data-space-guids="00000002-0000-0000-0000-000000000001"
+     data-typology-guids="00000003-0000-0000-0000-000000000001"
+     data-activity-guids='[{"activityGuid":"00000004-0000-0000-0000-000000000001","spaceGuid":"00000002-0000-0000-0000-000000000001"}]'>
+</div>
+```
+
+### GUID Validation
+
+In reference mode, GUID strings are validated using `Guid.TryParse` before being output as `data-*` attributes. Invalid values (null, empty, whitespace, `Guid.Empty`) are filtered out. Activity GUID objects require both `activityGuid` and `spaceGuid` to be valid.
+
+### Map Block Data Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `center` | `{ lat, lng }` | Map centre coordinates |
+| `zoom` | `int` | Zoom level |
+| `tileUrl` | `string` | Tile layer URL template |
+| `height` | `int` | Container height in pixels |
+| `venueGuids` | `string[]` | Venue GUID references |
+| `spaceGuids` | `string[]` | Space GUID references |
+| `typologyGuids` | `string[]` | Typology GUID references |
+| `activityGuids` | `object[]` | Activity references (`{ activityGuid, spaceGuid }`) |
+| `venues` | `object[]` | Resolved venue data (embedded mode) |
+| `spaces` | `object[]` | Resolved space data (embedded mode) |
+| `typologies` | `object[]` | Resolved typology data (embedded mode) |
+| `pois` | `object[]` | Resolved POI data (embedded mode) |
+| `activities` | `object[]` | Resolved activity data (embedded mode) |
+
+## BlazorApp Demo
+
+The solution includes a `BlazorApp.Client` / `BlazorApp.Server` project pair that demonstrates both rendering modes with interactive Leaflet maps:
+
+- **`/embedded`** -- Map block with fully resolved data rendered via `EjsRenderFragment` in embedded mode. The JS map renderer reads the inline `<script type="application/json">` and creates the Leaflet map with venue polygons, space markers, POI emoji icons, and activity markers.
+- **`/reference`** -- Map block rendered via `EjsRenderFragment` in reference mode. The JS map renderer reads `data-*` attributes and fetches venue/space/POI/activity data from mock API endpoints served by `BlazorApp.Server`.
+
+Run with:
+
+```bash
+dotnet run --project BlazorApp.Server
+```
+
+The server hosts the WASM client, serves mock API endpoints (`/api/premises/...`, `/api/schedules/...`), and proxies tile requests to avoid CORS issues with the protomaps tile server.
 
 ## CSS Styling Map
 
@@ -162,6 +239,10 @@ The styling map is a JSON array that maps CSS classes to block types. Styles are
     {
         "type": "image",
         "style": "img-fluid"
+    },
+    {
+        "type": "map",
+        "style": "map-container"
     }
 ]
 ```
@@ -200,243 +281,3 @@ All blocks **must** include an `id` field. Editor.js sometimes omits `id` on cer
 ```
 
 Ensure every block has an `id` before passing JSON to the converter.
-
-## Editor JSON Sample
-
-```json
-{
-    "time": 1707325917682,
-    "blocks": [
-    {"id": "uM3Adn6C9n", "data": {"text": "!!! <i>He</i>y<b>lo, W</b>orld! <a href=\"https://google.com\">Link</a> !!!", "wrap": "title"}, "type": "text"},
-    {
-        "id": "KgrM3aNM-n",
-        "type": "header",
-        "data": {
-        "text": "<mark class=\"cdx-marker\"><a href=\"http://google.com\">Heylo</a></mark>",
-        "level": 1
-        }
-    },
-    {
-        "id": "NaTtEbbeRT",
-        "type": "paragraph",
-        "data": {
-        "text": "Heylo World"
-        }
-    },
-    {
-        "id": "KgrM3aNM-n",
-        "type": "header",
-        "data": {
-        "text": "Second header",
-        "level": 3
-        }
-    },
-    {
-        "id": "QdqCFpKBAm",
-        "type": "list",
-        "data": {
-        "style": "ordered",
-        "items": [
-            {
-            "content": "A: One",
-            "items": [
-                {
-                "content": "B: Two",
-                "items": []
-                }
-            ]
-            },
-            {
-            "content": "A: Three",
-            "items": [
-                {
-                "content": "B: Four",
-                "items": [
-                    {
-                    "content": "C: Five",
-                    "items": []
-                    }
-                ]
-                },
-                {
-                "content": "B: Six",
-                "items": []
-                },
-                {
-                "content": "B: Seven",
-                "items": []
-                }
-            ]
-            }
-        ]
-        }
-    },
-    {
-        "id": "m-onbmz6BZ",
-        "type": "quote",
-        "data": {
-        "text": "Ohhh interesting...",
-        "caption": "by Me!",
-        "alignment": "left"
-        }
-    },
-    {
-        "id": "ZatOSzA754",
-        "type": "paragraph",
-        "data": {
-        "text": "dsf<i>sfa</i><b>sfasdfs</b>dffasd"
-        }
-    },
-    {
-        "id": "SWrBNzvp6A",
-        "type": "list",
-        "data": {
-        "style": "unordered",
-        "items": [
-            {
-            "content": "dwdw",
-            "items": []
-            },
-            {
-            "content": "wedwed",
-            "items": []
-            },
-            {
-            "content": "wedw",
-            "items": []
-            }
-        ]
-        }
-    },
-
-    {
-        "id": "yD5ZHUxF1N",
-        "type": "checklist",
-        "data": {
-        "items": [
-            {
-            "text": "Check List Item One",
-            "checked": false
-            },
-            {
-            "text": "Check List Item Two",
-            "checked": true
-            },
-            {
-            "text": "Check List Item Three",
-            "checked": false
-            }
-        ]
-        }
-    },
-    {
-        "id": "J5I_aD9c8j",
-        "type": "delimiter",
-        "data": {}
-    },
-    {
-        "id": "J-7FqxXppm",
-        "type": "table",
-        "data": {
-        "withHeadings": true,
-        "content": [
-            [
-            "Header 1",
-            "Header 2",
-            "Header 3"
-            ],
-            [
-            "qwerty",
-            "as<b>dfg</b>h",
-            "zxc<mark class=\"cdx-marker\">vbn</mark>"
-            ],
-            [
-            "AAA",
-            "<a href=\"https://google.com/\">BBB</a>",
-            "<code class=\"inline-code\">CCC</code>"
-            ]
-        ]
-        }
-    },
-    {
-        "id": "zOGIbPv7kl",
-        "type": "table",
-        "data": {
-        "withHeadings": false,
-        "content": [
-            [
-            "A1",
-            "B1"
-            ],
-            [
-            "A2",
-            "B2"
-            ]
-        ]
-        }
-    },
-    {
-        "id": "zOGADPv7kl",
-        "type": "image",
-        "data": {
-        "url": "https://www.tesla.com/tesla_theme/assets/img/_vehicle_redesign/roadster_and_semi/roadster/hero.jpg",
-        "caption": "Roadster // tesla.com",
-        "withBorder": true,
-        "withBackground": false,
-        "stretched": true
-        }
-    },
-    {
-        "id": "zOGFDv7kl",
-        "type" : "delimiter",
-        "data" : {}
-    },
-    {
-        "id": "zOUIDPv7kl",
-        "type": "warning",
-        "data": {
-        "title": "Note:",
-        "message": "Avoid using this method just for lulz. It can be very dangerous opposite your daily fun stuff."
-        }
-    },
-    {
-        "id": "zOJKDPv7kl",
-        "type" : "delimiter",
-        "data" : {}
-    },
-    {
-        "id": "zUKNDPv7kl",
-        "type" : "embed",
-        "data" : {
-        "service" : "coub",
-        "source" : "https://coub.com/view/1czcdf",
-        "embed" : "https://coub.com/embed/1czcdf",
-        "width" : 580,
-        "height" : 320,
-        "caption" : "My Life"
-        }
-    }
-    ],
-    "version": "2.28.2"
-}
-```
-
-
-Notes:
-
-`_content/EditorJsonToHtmlConverter/EditorJsonToHtmlConverter.EjsRenderFragment.razor.js`
-
-For the component to self-initialise, update the `EjsRenderFragment.razor.cs`
-
-```csharp
-[Inject] private IJSRuntime JS { get; set; }
-private IJSObjectReference? _jsModule;
-
-protected override async Task OnAfterRenderAsync(bool firstRender)
-{ 
-    if (firstRender)
-    {
-        _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/EditorJsonToHtmlConverter/EditorJsonToHtmlConv  erter.EjsRenderFragment.razor.js");
-    }
-}
-```

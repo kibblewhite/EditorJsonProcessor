@@ -1,0 +1,23 @@
+@page "/embedded"
+@using EditorJsonToHtmlConverter
+
+<PageTitle>Map Block — Embedded Mode</PageTitle>
+
+<h1>Embedded Mode</h1>
+<p>The map block contains fully resolved venue, space, POI, and activity data serialised as a child <code>&lt;script type="application/json"&gt;</code> element. No API calls needed.</p>
+
+<h2>Rendered Output</h2>
+<div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background: #fff;">
+    <EjsRenderFragment Value="@EditorJsJson" StylingMap="@StylingMap" DataRetrievalMode="DataRetrievalMode.Embedded">
+        <span>Loading...</span>
+    </EjsRenderFragment>
+</div>
+
+<h2>Raw HTML Output</h2>
+<pre style="background: #f5f5f5; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; max-height: 400px;">@RenderedHtml</pre>
+
+<h2>Source JSON</h2>
+<details>
+    <summary style="cursor: pointer; font-weight: 600; margin-bottom: 0.5rem;">EditorJS JSON payload (with resolved data)</summary>
+    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; max-height: 400px;">@EditorJsJson</pre>
+</details>

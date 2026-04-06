@@ -1,7 +1,7 @@
 namespace EditorJsonToHtmlConverter.Models;
 
 /// <summary>
-/// Represents the centre coordinates of a leaflet-map block.
+/// Represents the centre coordinates of a map block.
 /// </summary>
 public sealed class EditorJsMapCenter : IEditorJsEntity<EditorJsMapCenter>
 {

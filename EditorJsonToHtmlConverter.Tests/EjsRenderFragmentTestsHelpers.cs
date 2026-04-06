@@ -241,6 +241,71 @@ internal static class EjsRenderFragmentTestsHelpers
         !!! <i>He</i>y<b>lo, W</b>orld! <a href="https://google.com">Link</a> !!!<h1 id="KgrM3aNM-n" class="specific-style-1"><mark class="cdx-marker"><a href="http://google.com">Heylo</a></mark></h1><p id="NaTtEbbeRT" class="specific-style-p">Heylo World</p><h3 id="KgrM3aNM-n" class="general-style-3">Second header</h3><ol id="QdqCFpKBAm" class="list-group list-group-flush"><li class="list-group-item">A: One<ul><li>B: Two<ul></ul></li></ul></li><li class="list-group-item">A: Three<ul><li>B: Four<ul><li>C: Five<ul></ul></li></ul></li><li>B: Six<ul></ul></li><li>B: Seven<ul></ul></li></ul></li></ol><blockquote id="m-onbmz6BZ" class="text-left blockquote">Ohhh interesting...<footer class="blockquote-footer">by Me!</footer></blockquote><p id="ZatOSzA754" class="specific-style-p">dsf<i>sfa</i><b>sfasdfs</b>dffasd</p><ul id="SWrBNzvp6A" class="list-group list-group-flush"><li class="list-group-item">dwdw</li><li class="list-group-item">wedwed</li><li class="list-group-item">wedw</li></ul><ul id="yD5ZHUxF1N" role="group" style="list-style-type: none;" class="list-group"><li aria-hidden="true" class="list-group-item"><input type="checkbox" disabled="true" />Check List Item One</li><li aria-hidden="true" class="list-group-item"><input type="checkbox" disabled="true" checked="checked" />Check List Item Two</li><li aria-hidden="true" class="list-group-item"><input type="checkbox" disabled="true" />Check List Item Three</li></ul><hr id="J5I_aD9c8j" class="delimiter" /><table id="J-7FqxXppm" class="table table-hover"><thead><tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr></thead><tbody><tr><td>qwerty</td><td>as<b>dfg</b>h</td><td>zxc<mark class="cdx-marker">vbn</mark></td></tr><tr><td>AAA</td><td><a href="https://google.com/">BBB</a></td><td><code class="inline-code">CCC</code></td></tr></tbody></table><table id="zOGIbPv7kl" class="table table-hover"><tbody><tr><td>A1</td><td>B1</td></tr><tr><td>A2</td><td>B2</td></tr></tbody></table><img id="zOGADPv7kl" class="img-fluid" src="https://www.tesla.com/tesla_theme/assets/img/_vehicle_redesign/roadster_and_semi/roadster/hero.jpg" alt="Roadster // tesla.com" style="border: 1px solid #ddd; width: 100%;" /><p style="text-align: center;">Roadster // tesla.com</p><hr id="zOGFDv7kl" class="delimiter" /><div id="zOUIDPv7kl" class="warning"><strong>Note:</strong><p>Avoid using this method just for lulz. It can be very dangerous opposite your daily fun stuff.</p></div><hr id="zOJKDPv7kl" class="delimiter" /><div id="zUKNDPv7kl"><iframe src="https://coub.com/embed/1czcdf" width="580" height="320" style="margin: 0 auto;" frameborder="0" allowfullscreen="true"></iframe></div><p>My Life</p>
         """;
 
+    public static readonly string EditorJsonMapBlockEmbedded = """
+        {
+          "time": 1717207275445,
+          "version": "2.31.5",
+          "blocks": [
+            {
+              "id": "map_embed_001",
+              "type": "map",
+              "data": {
+                "center": { "lat": 51.5065, "lng": -0.0760 },
+                "zoom": 16,
+                "tileUrl": "/tiles/{z}/{x}/{y}.mvt",
+                "height": 600,
+                "venueGuids": ["00000001-0000-0000-0000-000000000001"],
+                "spaceGuids": ["00000002-0000-0000-0000-000000000001"],
+                "typologyGuids": [],
+                "activityGuids": [],
+                "venues": [
+                  {
+                    "venueGuid": { "value": "00000001-0000-0000-0000-000000000001" },
+                    "name": "Tower of London",
+                    "address": { "latitude": 51.5081, "longitude": -0.0759 }
+                  }
+                ],
+                "spaces": [
+                  {
+                    "spaceGuid": { "value": "00000002-0000-0000-0000-000000000001" },
+                    "name": "White Tower",
+                    "location": { "latitude": 51.50843, "longitude": -0.07614 }
+                  }
+                ],
+                "typologies": [],
+                "pois": [],
+                "activities": []
+              }
+            }
+          ]
+        }
+        """;
+
+    public static readonly string EditorJsonMapBlockReference = """
+        {
+          "time": 1717207275445,
+          "version": "2.31.5",
+          "blocks": [
+            {
+              "id": "map_ref_001",
+              "type": "map",
+              "data": {
+                "center": { "lat": 51.5065, "lng": -0.0760 },
+                "zoom": 16,
+                "tileUrl": "/tiles/{z}/{x}/{y}.mvt",
+                "height": 600,
+                "venueGuids": ["00000001-0000-0000-0000-000000000001", "00000001-0000-0000-0000-000000000002"],
+                "spaceGuids": ["00000002-0000-0000-0000-000000000001"],
+                "typologyGuids": ["00000003-0000-0000-0000-000000000001"],
+                "activityGuids": [
+                  { "activityGuid": "00000004-0000-0000-0000-000000000001", "spaceGuid": "00000002-0000-0000-0000-000000000001" }
+                ]
+              }
+            }
+          ]
+        }
+        """;
+
     public static readonly string StylingMap = """
         [
             {

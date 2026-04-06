@@ -1,0 +1,28 @@
+@page "/reference"
+@using EditorJsonToHtmlConverter
+
+<PageTitle>Map Block — Reference Mode</PageTitle>
+
+<h1>EditorJsonToHtmlConverter — Reference Mode</h1>
+<p>Renders an EditorJS JSON payload in <strong>reference mode</strong>. The map block outputs <code>data-*</code> attributes with GUID references. The viewer script discovers the container, reads the attributes, and fetches full data from the mock API endpoints served by this app.</p>
+
+<h2>Rendered Output (hydrated by viewer JS)</h2>
+<div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background: #fff;">
+    <EjsRenderFragment Value="@EditorJsJson" StylingMap="@StylingMap" DataRetrievalMode="DataRetrievalMode.Reference" Locale="@Locale">
+        <span>Loading...</span>
+    </EjsRenderFragment>
+</div>
+
+<h2>Raw HTML Output</h2>
+<pre style="background: #f5f5f5; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; max-height: 400px;">@RenderedHtml</pre>
+
+<h2>How It Works</h2>
+<div style="background: #cff4fc; border: 1px solid #9eeaf9; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.875rem; color: #055160;">
+    The renderer outputs <code>data-block-type="map"</code>, <code>data-locale</code>, GUID lists, and map configuration as attributes. The <code>leaflet-map-viewer.min.js</code> script (loaded below) discovers the container, reads the attributes, and fetches venue/space/POI/activity data from the mock API endpoints at <code>/api/...</code>. See <a href="/">embedded mode</a> for comparison.
+</div>
+
+<h2>Source JSON</h2>
+<details>
+    <summary style="cursor: pointer; font-weight: 600; margin-bottom: 0.5rem;">EditorJS JSON payload (GUIDs only, no resolved data)</summary>
+    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; max-height: 400px;">@EditorJsJson</pre>
+</details>
