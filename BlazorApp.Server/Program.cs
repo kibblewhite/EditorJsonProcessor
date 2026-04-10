@@ -133,8 +133,8 @@ object[] activities =
     new { activityGuid = new { value = "00000004-0000-0000-0000-000000000004" }, displayName = "Armoury & Weapons Display", spaceGuid = new { value = "00000002-0000-0000-0000-000000000001" }, location = new { latitude = 51.50843, longitude = -0.07614, level = 0 } }
 ];
 
-// GET /premises/venue-details/{guid}/locale/{locale}
-app.MapGet("/api/premises/venue-details/{guid}/locale/{locale}", (string guid, string locale) =>
+// GET /venue-details/{guid}/locale/{locale}
+app.MapGet("/api/venue-details/{guid}/locale/{locale}", (string guid, string locale) =>
 {
     logger.LogInformation("[mock-api] GET venue-details guid={Guid} locale={Locale}", guid, locale);
     if (venues.TryGetValue(guid, out object? venue) is false)
@@ -145,8 +145,8 @@ app.MapGet("/api/premises/venue-details/{guid}/locale/{locale}", (string guid, s
     return Results.Json(venue, json_options);
 });
 
-// GET /premises/space-details/{guid}/locale/{locale}
-app.MapGet("/api/premises/space-details/{guid}/locale/{locale}", (string guid, string locale) =>
+// GET /space-details/{guid}/locale/{locale}
+app.MapGet("/api/space-details/{guid}/locale/{locale}", (string guid, string locale) =>
 {
     logger.LogInformation("[mock-api] GET space-details guid={Guid} locale={Locale}", guid, locale);
     if (spaces.TryGetValue(guid, out object? space) is false)
@@ -157,22 +157,22 @@ app.MapGet("/api/premises/space-details/{guid}/locale/{locale}", (string guid, s
     return Results.Json(space, json_options);
 });
 
-// POST /premises/pois-by-typology-guids/locale/{locale}
-app.MapPost("/api/premises/pois-by-typology-guids/locale/{locale}", (string locale) =>
+// POST /pois-by-typology-guids/locale/{locale}
+app.MapPost("/api/pois-by-typology-guids/locale/{locale}", (string locale) =>
 {
     logger.LogInformation("[mock-api] POST pois-by-typology-guids locale={Locale}, returning {Count} POIs", locale, pois.Length);
     return Results.Json(pois, json_options);
 });
 
-// GET /premises/typologies/locale/{locale}
-app.MapGet("/api/premises/typologies/locale/{locale}", (string locale) =>
+// GET /typologies/locale/{locale}
+app.MapGet("/api/typologies/locale/{locale}", (string locale) =>
 {
     logger.LogInformation("[mock-api] GET typologies locale={Locale}, returning {Count} typologies", locale, typologies.Length);
     return Results.Json(typologies, json_options);
 });
 
-// POST /schedules/activities-by-activity-guids/locale/{locale}
-app.MapPost("/api/schedules/activities-by-activity-guids/locale/{locale}", (string locale) =>
+// POST /activities-by-activity-guids/locale/{locale}
+app.MapPost("/api/activities-by-activity-guids/locale/{locale}", (string locale) =>
 {
     logger.LogInformation("[mock-api] POST activities-by-activity-guids locale={Locale}, returning {Count} activities", locale, activities.Length);
     return Results.Json(activities, json_options);

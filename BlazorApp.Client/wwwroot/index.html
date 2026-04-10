@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="BlazorApp.Client.styles.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@2.0.0-alpha.1/dist/leaflet.min.css" />
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/leaflet@2.0.0-alpha.1/dist/leaflet.min.css" />
     <script type="importmap"></script>
 </head>
 
@@ -30,8 +30,11 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
-    <script src="/lib/leaflet-map-viewer.min.js" data-api-base="/api"></script>
-    <style>.ce-leaflet-map-poi-icon { background: none; border: none; font-size: 1.5rem; text-align: center; line-height: 1; }</style>
+    <script src="//byteloch-shared.gitlab.io/libraries/editorjs-leaflet/dist/viewer/0.0.8/leaflet-map-viewer.min.js" data-api-base="/api"></script>
+    <style>
+        .ce-leaflet-map-poi-icon { background: none; border: none; font-size: 1.5rem; text-align: center; line-height: 1; }
+        [data-block-type="map"] { width: 70vw; max-width: 70vw; }
+    </style>
 </body>
 
 </html>
