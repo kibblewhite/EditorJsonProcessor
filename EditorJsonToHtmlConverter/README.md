@@ -180,18 +180,20 @@ Controls how `map` blocks render their data:
 
 ### Client-Side Hydration
 
-Hydrating rendered map containers in the browser requires a single script tag — the [editorjs-leaflet](https://byteloch-shared.gitlab.io/libraries/editorjs-leaflet/) viewer handles everything else:
+Hydrating rendered map containers in the browser requires two tags — a stylesheet `<link>` for the shared marker styling and a `<script>` for the [editorjs-leaflet](https://byteloch-shared.gitlab.io/libraries/editorjs-leaflet/) viewer. The viewer handles discovery and rendering automatically from there:
 
 ```html
-<script src="//byteloch-shared.gitlab.io/libraries/editorjs-leaflet/dist/viewer/0.0.11/leaflet-map-viewer.min.js" data-api-base="/api"></script>
+<link rel="stylesheet" href="//byteloch-shared.gitlab.io/libraries/editorjs-leaflet/dist/viewer/0.0.12/leaflet-map-viewer.min.css" />
+<script src="//byteloch-shared.gitlab.io/libraries/editorjs-leaflet/dist/viewer/0.0.12/leaflet-map-viewer.min.js" data-api-base="/api"></script>
 ```
 
-- On page load the viewer scans for existing `[data-block-type="map"]` elements and hydrates them.
-- A `MutationObserver` watches the document for containers added after initial load, so the viewer works transparently with Blazor WASM, Blazor Server, React, Vue, and any other framework that mounts content dynamically. No lifecycle hooks or interop calls are required from the consumer.
-- Discovery is idempotent — each container is marked with `data-map-initialised` after hydration, so repeated scans are safe.
+- **The CSS file** ships the POI icon reset (`.ce-leaflet-map-poi-icon`) so emoji markers render cleanly without borders or backgrounds. Load it in `<head>` alongside any other stylesheets — overriding is straightforward via the normal CSS cascade from a later stylesheet.
+- **On page load** the viewer scans for existing `[data-block-type="map"]` elements and hydrates them.
+- **A `MutationObserver`** watches the document for containers added after initial load, so the viewer works transparently with Blazor WASM, Blazor Server, React, Vue, and any other framework that mounts content dynamically. No lifecycle hooks or interop calls are required from the consumer.
+- **Discovery is idempotent** — each container is marked with `data-map-initialised` after hydration, so repeated scans are safe.
 - **Do not** call `JSRuntime.InvokeVoidAsync("MapViewer.initialise")` from `OnAfterRenderAsync` (or equivalent). It is redundant with the observer and can race the script's load, producing cryptic `'MapViewer' was undefined` errors. Omit the interop call entirely and let the observer do its job.
 
-The `data-api-base` attribute tells the viewer where to fetch venue/space/POI/activity data for reference-mode containers.
+The `data-api-base` attribute tells the viewer where to fetch venue/space/POI/activity data for reference-mode containers. **Keep the CSS and JS version numbers in sync** — bump both when upgrading.
 
 ### GUID Validation
 
