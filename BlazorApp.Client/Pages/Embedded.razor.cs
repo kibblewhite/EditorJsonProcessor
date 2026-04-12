@@ -1,13 +1,18 @@
 using EditorJsonToHtmlConverter;
+using EditorJsonToHtmlConverter.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 
 namespace BlazorApp.Client.Pages;
 
 public partial class Embedded : ComponentBase
 {
     [Inject] public required EjsHtmlRenderer EjsHtmlRenderer { get; init; }
-    [Inject] public required IJSRuntime JSRuntime { get; init; }
+    [Inject] public required ILogger<Embedded> Logger { get; init; }
+
+    // note: stable per component instance. Generating this inline in the razor markup via
+    // Guid.CreateVersion7() creates a new value on every parent render, which causes Blazor
+    // to push a parameter change into EjsRenderFragment on every re-render.
+    protected Guid CorrelationIdentifier { get; } = Guid.CreateVersion7();
 
     protected string RenderedHtml { get; set; } = string.Empty;
 
@@ -123,15 +128,14 @@ public partial class Embedded : ComponentBase
         """;
 
     protected override async Task OnInitializedAsync()
-    {
-        RenderedHtml = await EjsHtmlRenderer.ParseAsync(EditorJsJson);
-    }
+        => RenderedHtml = await EjsHtmlRenderer.ParseAsync(EditorJsJson);
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private Task OnRenderCompletedAsync(EjsRenderCompletedEventArgs args)
     {
-        if (firstRender)
-        {
-            await JSRuntime.InvokeVoidAsync("MapViewer.initialize");
-        }
+        Logger.LogInformation(
+            "EjsHtmlRenderer completed (correlation: {CorrelationIdentifier}) in {ElapsedMs} ms",
+            args.CorrelationIdentifier,
+            args.Elapsed.TotalMilliseconds);
+        return Task.CompletedTask;
     }
 }

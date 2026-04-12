@@ -7,8 +7,8 @@
 <p>The map block contains fully resolved venue, space, POI, and activity data serialised as a child <code>&lt;script type="application/json"&gt;</code> element. No API calls needed.</p>
 
 <h2>Rendered Output</h2>
-<div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background: #fff;">
-    <EjsRenderFragment Value="@EditorJsJson" StylingMap="@StylingMap" DataRetrievalMode="DataRetrievalMode.Embedded">
+<div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background: #fff; max-width: 85vw !important;">
+    <EjsRenderFragment Value="@EditorJsJson" StylingMap="@StylingMap" DataRetrievalMode="DataRetrievalMode.Embedded" CorrelationIdentifier="@CorrelationIdentifier" RenderCompleted="OnRenderCompletedAsync">
         <span>Loading...</span>
     </EjsRenderFragment>
 </div>

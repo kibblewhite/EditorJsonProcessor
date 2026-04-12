@@ -1,3 +1,4 @@
+using AngleSharp.Dom;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,12 +13,11 @@ public class EjsRenderFragmentTests : Bunit.BunitContext
     [TestInitialize]
     public void TestInitialise()
     {
-        ServiceProvider serviceProvider = new ServiceCollection()
-            .AddLogging()
-            .BuildServiceProvider();
+        // note: registers ILoggerFactory on BUnit's service provider so EjsRenderFragment
+        // can resolve its injected ILogger<EjsRenderFragment> dependency at render time.
+        Services.AddLogging();
 
-        ILoggerFactory factory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
+        ILoggerFactory factory = Services.BuildServiceProvider().GetRequiredService<ILoggerFactory>();
         _logger = factory.CreateLogger<EjsRenderFragment>();
     }
 
@@ -40,5 +40,67 @@ public class EjsRenderFragmentTests : Bunit.BunitContext
         // Add appropriate assertions to verify the HTML output
         // For example:
         // cut.Find("p").MarkupMatches("<p>Hello World</p>");
+    }
+
+    [TestMethod]
+    public void EmbeddedMode_MapBlock_EmitsContainerWithInlineJson()
+    {
+        // Arrange + Act
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
+            .Add(p => p.Value, EjsRenderFragmentTestsHelpers.EditorJsonMapBlockEmbedded)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Embedded)
+            .AddChildContent("<span>Loading...</span>"));
+
+        // Assert
+        IElement container = cut.Find("div[data-block-type='map']");
+        IElement? inline_json = container.QuerySelector("script[type='application/json']");
+        Assert.IsNotNull(inline_json, "Embedded mode should emit a child <script type='application/json'> carrying the full block data.");
+        Assert.DoesNotContain("Loading...", cut.Markup, "The built render fragment should have replaced the ChildContent placeholder.");
+    }
+
+    [TestMethod]
+    public void ReferenceMode_MapBlock_EmitsContainerWithDataAttributes()
+    {
+        // Arrange + Act
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
+            .Add(p => p.Value, EjsRenderFragmentTestsHelpers.EditorJsonMapBlockReference)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Reference)
+            .AddChildContent("<span>Loading...</span>"));
+
+        // Assert
+        IElement container = cut.Find("div[data-block-type='map']");
+        Assert.IsTrue(container.HasAttribute("data-center"), "Reference mode should emit data-center.");
+        Assert.IsTrue(container.HasAttribute("data-zoom"), "Reference mode should emit data-zoom.");
+        Assert.IsTrue(container.HasAttribute("data-venue-guids"), "Reference mode should emit data-venue-guids for the GUID list.");
+        Assert.IsNull(container.QuerySelector("script[type='application/json']"), "Reference mode should not inline block data as JSON — the viewer fetches via data-* attributes.");
+    }
+
+    [TestMethod]
+    public void ParentRerender_PreservesBuiltRenderFragment()
+    {
+        // Arrange — first render builds the fragment and swaps in the converted block markup.
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
+            .Add(p => p.Value, EjsRenderFragmentTestsHelpers.EditorJsonMapBlockEmbedded)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Embedded)
+            .AddChildContent("<span>Loading...</span>"));
+
+        cut.Find("div[data-block-type='map']");
+        Assert.DoesNotContain("Loading...", cut.Markup, "Initial render should have swapped in the built content.");
+
+        // Act — simulate a parent re-render pushing fresh parameters (same values). This is
+        // the regression guard for the bug where ChildContent was mutated as internal state
+        // and therefore wiped out by the next SetParametersAsync call.
+        cut.Render(parameters => parameters
+            .Add(p => p.Value, EjsRenderFragmentTestsHelpers.EditorJsonMapBlockEmbedded)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Embedded)
+            .AddChildContent("<span>Loading...</span>"));
+
+        // Assert — built content survives the re-render.
+        cut.Find("div[data-block-type='map']");
+        Assert.DoesNotContain("Loading...", cut.Markup, "After parent re-render, the ChildContent placeholder must not come back.");
     }
 }

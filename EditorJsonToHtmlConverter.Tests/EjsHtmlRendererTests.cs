@@ -49,7 +49,7 @@ public class EjsHtmlRendererTests
         string expected_html = EjsRenderFragmentTestsHelpers.ExpectedEditorHtmlWithStylingsValue;
 
         // Act
-        string result = await _ejs_html_renderer.ParseAsync(json_value, false, EjsRenderFragmentTestsHelpers.StylingMap);
+        string result = await _ejs_html_renderer.ParseAsync(json_value, strip_html: false, styling_map: EjsRenderFragmentTestsHelpers.StylingMap);
 
         // Assert
         Assert.Contains(expected_html, result);
@@ -64,7 +64,7 @@ public class EjsHtmlRendererTests
         string json_value = EjsRenderFragmentTestsHelpers.EditorJsonEmpty;
 
         // Act
-        string result = await _ejs_html_renderer.ParseAsync(json_value, true);
+        string result = await _ejs_html_renderer.ParseAsync(json_value, strip_html: true);
 
         // Assert
         Assert.AreEqual(string.Empty, result);
@@ -97,16 +97,16 @@ public class EjsHtmlRendererTests
         string result = await _ejs_html_renderer.ParseAsync(json_value);
 
         // Assert — container div with data-block-type="map"
-        Assert.IsTrue(result.Contains("data-block-type=\"map\"") is true, "Expected data-block-type=\"map\" attribute on container div");
-        Assert.IsTrue(result.Contains("id=\"map_embed_001\"") is true, "Expected id attribute matching block id");
+        Assert.Contains("data-block-type=\"map\"", result, "Expected data-block-type=\"map\" attribute on container div");
+        Assert.Contains("id=\"map_embed_001\"", result, "Expected id attribute matching block id");
 
         // Assert — embedded mode outputs a child <script type="application/json"> with the data
-        Assert.IsTrue(result.Contains("""<script type="application/json">""") is true, "Expected child script element with application/json type");
-        Assert.IsTrue(result.Contains("Tower of London") is true, "Expected resolved venue name in embedded JSON");
-        Assert.IsTrue(result.Contains("White Tower") is true, "Expected resolved space name in embedded JSON");
+        Assert.Contains("""<script type="application/json">""", result, "Expected child script element with application/json type");
+        Assert.Contains("Tower of London", result, "Expected resolved venue name in embedded JSON");
+        Assert.Contains("White Tower", result, "Expected resolved space name in embedded JSON");
 
         // Assert — no data-* GUID attributes in embedded mode
-        Assert.IsTrue(result.Contains("data-venue-guids") is false, "Embedded mode should not output data-venue-guids attribute");
+        Assert.DoesNotContain("data-venue-guids", result, "Embedded mode should not output data-venue-guids attribute");
     }
 
     [TestMethod]
@@ -115,30 +115,30 @@ public class EjsHtmlRendererTests
         ArgumentNullException.ThrowIfNull(_html_renderer, nameof(_html_renderer));
 
         // Arrange
-        EjsHtmlRenderer reference_renderer = new(_html_renderer, DataRetrievalMode.Reference, System.Globalization.CultureInfo.GetCultureInfo("en-GB"));
+        EjsHtmlRenderer reference_renderer = new(_html_renderer, DataRetrievalMode.Reference, locale: System.Globalization.CultureInfo.GetCultureInfo("en-GB"));
         string json_value = EjsRenderFragmentTestsHelpers.EditorJsonMapBlockReference;
 
         // Act
         string result = await reference_renderer.ParseAsync(json_value);
 
         // Assert — container div with data-block-type="map"
-        Assert.IsTrue(result.Contains("data-block-type=\"map\"") is true, "Expected data-block-type=\"map\" attribute");
-        Assert.IsTrue(result.Contains("id=\"map_ref_001\"") is true, "Expected id attribute matching block id");
+        Assert.Contains("data-block-type=\"map\"", result, "Expected data-block-type=\"map\" attribute");
+        Assert.Contains("id=\"map_ref_001\"", result, "Expected id attribute matching block id");
 
         // Assert — reference mode outputs data-* attributes
-        Assert.IsTrue(result.Contains("data-locale=\"en-GB\"") is true, "Expected data-locale attribute");
-        Assert.IsTrue(result.Contains("data-zoom=\"16\"") is true, "Expected data-zoom attribute");
-        Assert.IsTrue(result.Contains("data-height=\"600\"") is true, "Expected data-height attribute");
-        Assert.IsTrue(result.Contains("data-tile-url=\"/tiles/{z}/{x}/{y}.mvt\"") is true, "Expected data-tile-url attribute");
+        Assert.Contains("data-locale=\"en-GB\"", result, "Expected data-locale attribute");
+        Assert.Contains("data-zoom=\"16\"", result, "Expected data-zoom attribute");
+        Assert.Contains("data-height=\"600\"", result, "Expected data-height attribute");
+        Assert.Contains("data-tile-url=\"/tiles/{z}/{x}/{y}.mvt\"", result, "Expected data-tile-url attribute");
 
         // Assert — GUID lists present as comma-separated data-* attributes
-        Assert.IsTrue(result.Contains("data-venue-guids=\"00000001-0000-0000-0000-000000000001,00000001-0000-0000-0000-000000000002\"") is true, "Expected data-venue-guids with both GUIDs");
-        Assert.IsTrue(result.Contains("data-space-guids=\"00000002-0000-0000-0000-000000000001\"") is true, "Expected data-space-guids");
-        Assert.IsTrue(result.Contains("data-typology-guids=\"00000003-0000-0000-0000-000000000001\"") is true, "Expected data-typology-guids");
-        Assert.IsTrue(result.Contains("data-activity-guids=") is true, "Expected data-activity-guids");
+        Assert.Contains("data-venue-guids=\"00000001-0000-0000-0000-000000000001,00000001-0000-0000-0000-000000000002\"", result, "Expected data-venue-guids with both GUIDs");
+        Assert.Contains("data-space-guids=\"00000002-0000-0000-0000-000000000001\"", result, "Expected data-space-guids");
+        Assert.Contains("data-typology-guids=\"00000003-0000-0000-0000-000000000001\"", result, "Expected data-typology-guids");
+        Assert.Contains("data-activity-guids=", result, "Expected data-activity-guids");
 
         // Assert — no embedded script in reference mode
-        Assert.IsTrue(result.Contains("""<script type="application/json">""") is false, "Reference mode should not output embedded script element");
+        Assert.DoesNotContain("""<script type="application/json">""", result, "Reference mode should not output embedded script element");
     }
 
     [TestMethod]
@@ -174,8 +174,8 @@ public class EjsHtmlRendererTests
         string result = await reference_renderer.ParseAsync(json_with_empty_guids);
 
         // Assert — only the valid GUID should appear, Guid.Empty filtered out
-        Assert.IsTrue(result.Contains("data-venue-guids=\"00000001-0000-0000-0000-000000000001\"") is true, "Expected only the valid GUID, empty GUID filtered");
-        Assert.IsTrue(result.Contains("00000000-0000-0000-0000-000000000000") is false, "Guid.Empty should be filtered out");
+        Assert.Contains("data-venue-guids=\"00000001-0000-0000-0000-000000000001\"", result, "Expected only the valid GUID, empty GUID filtered");
+        Assert.DoesNotContain("00000000-0000-0000-0000-000000000000", result, "Guid.Empty should be filtered out");
     }
 
     [TestMethod]

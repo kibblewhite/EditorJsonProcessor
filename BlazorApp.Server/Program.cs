@@ -142,6 +142,7 @@ app.MapGet("/api/venue-details/{guid}/locale/{locale}", (string guid, string loc
         logger.LogWarning("[mock-api] Venue not found: {Guid}", guid);
         return Results.NotFound();
     }
+
     return Results.Json(venue, json_options);
 });
 
@@ -154,6 +155,7 @@ app.MapGet("/api/space-details/{guid}/locale/{locale}", (string guid, string loc
         logger.LogWarning("[mock-api] Space not found: {Guid}", guid);
         return Results.NotFound();
     }
+
     return Results.Json(space, json_options);
 });
 

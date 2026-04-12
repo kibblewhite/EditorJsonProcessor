@@ -7,8 +7,8 @@
 <p>Renders an EditorJS JSON payload in <strong>reference mode</strong>. The map block outputs <code>data-*</code> attributes with GUID references. The viewer script discovers the container, reads the attributes, and fetches full data from the mock API endpoints served by this app.</p>
 
 <h2>Rendered Output (hydrated by viewer JS)</h2>
-<div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background: #fff;">
-    <EjsRenderFragment Value="@EditorJsJson" StylingMap="@StylingMap" DataRetrievalMode="DataRetrievalMode.Reference" Locale="@Locale">
+<div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background: #fff; max-width: 85vw !important;">
+    <EjsRenderFragment Value="@EditorJsJson" StylingMap="@StylingMap" DataRetrievalMode="DataRetrievalMode.Reference" Locale="@Locale" CorrelationIdentifier="@CorrelationIdentifier" RenderCompleted="OnRenderCompletedAsync">
         <span>Loading...</span>
     </EjsRenderFragment>
 </div>

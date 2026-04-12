@@ -1,17 +1,22 @@
-using System.Globalization;
 using EditorJsonToHtmlConverter;
+using EditorJsonToHtmlConverter.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.JSInterop;
+using System.Globalization;
 
 namespace BlazorApp.Client.Pages;
 
 public partial class Reference : ComponentBase
 {
     [Inject] public required HtmlRenderer HtmlRenderer { get; init; }
-    [Inject] public required IJSRuntime JSRuntime { get; init; }
+    [Inject] public required ILogger<Reference> Logger { get; init; }
 
     protected string RenderedHtml { get; set; } = string.Empty;
+
+    // note: stable per component instance. Generating this inline in the razor markup via
+    // Guid.CreateVersion7() creates a new value on every parent render, which causes Blazor
+    // to push a parameter change into EjsRenderFragment on every re-render.
+    protected Guid CorrelationIdentifier { get; } = Guid.CreateVersion7();
 
     protected static CultureInfo Locale => CultureInfo.GetCultureInfo("en-GB");
 
@@ -66,15 +71,16 @@ public partial class Reference : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        EjsHtmlRenderer reference_renderer = new(HtmlRenderer, DataRetrievalMode.Reference, Locale);
-        RenderedHtml = await reference_renderer.ParseAsync(EditorJsJson);
+        EjsHtmlRenderer reference_renderer = new(HtmlRenderer, DataRetrievalMode.Reference, OnRenderCompletedAsync, Locale);
+        RenderedHtml = await reference_renderer.ParseAsync(EditorJsJson, Guid.CreateVersion7());
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private Task OnRenderCompletedAsync(EjsRenderCompletedEventArgs args)
     {
-        if (firstRender)
-        {
-            await JSRuntime.InvokeVoidAsync("MapViewer.initialize");
-        }
+        Logger.LogInformation(
+            "EjsHtmlRenderer completed (correlation: {CorrelationIdentifier}) in {ElapsedMs} ms",
+            args.CorrelationIdentifier,
+            args.Elapsed.TotalMilliseconds);
+        return Task.CompletedTask;
     }
 }

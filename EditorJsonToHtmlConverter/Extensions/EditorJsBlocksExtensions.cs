@@ -33,7 +33,7 @@ public static class EditorJsBlocksExtensions
     /// </summary>
     /// <param name="editor_js_blocks">The Editor.js blocks collection to add the empty block to.</param>
     /// <returns>The updated <see cref="EditorJsBlocks"/> instance with the empty block added, enabling method chaining.</returns>
-    /// <remarks>This method is useful for adding placeholder blocks or initializing content structure with empty elements.</remarks>
+    /// <remarks>This method is useful for adding placeholder blocks or initialising content structure with empty elements.</remarks>
     public static EditorJsBlocks AddEmptyBlock(this EditorJsBlocks editor_js_blocks)
     {
         editor_js_blocks.Blocks.Add(EditorJsBlock.Empty);

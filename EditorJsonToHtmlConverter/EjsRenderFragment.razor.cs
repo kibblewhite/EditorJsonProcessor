@@ -8,42 +8,50 @@ public partial class EjsRenderFragment : ComponentBase
     /// <summary>
     /// Gets or sets the content to be rendered inside the component.
     /// </summary>
-    [Parameter]
-    public required RenderFragment ChildContent { get; set; }
+    [Parameter] public required RenderFragment ChildContent { get; set; }
 
     /// <summary>
     /// Gets or sets the JSON output from the EditorJS block editor.
     /// </summary>
     /// <remarks>This JSON string is used to generate a segment of UI content.</remarks>
-    [Parameter]
-    public required string Value { get; set; }
+    [Parameter] public required string Value { get; set; }
 
     /// <summary>
     /// Gets or sets the JSON string that defines the styling map for the EditorJS blocks.
     /// </summary>
     /// <remarks>This JSON string is used to apply styles to the UI content.</remarks>
-    [Parameter]
-    public required string StylingMap { get; set; } = "[]";
+    [Parameter] public required string StylingMap { get; set; }
 
     /// <summary>
     /// Gets or sets the data retrieval mode that controls whether map blocks render
     /// embedded resolved data or data-* attribute references.
     /// </summary>
-    [Parameter]
-    public DataRetrievalMode DataRetrievalMode { get; set; } = DataRetrievalMode.Embedded;
+    [Parameter] public required DataRetrievalMode DataRetrievalMode { get; set; }
 
     /// <summary>
     /// Gets or sets the locale for rendering. Available to block renderers for locale-aware
     /// output (e.g. data-locale attributes for client-side hydration). Null means omitted.
     /// </summary>
-    [Parameter]
-    public CultureInfo? Locale { get; set; }
+    [Parameter] public CultureInfo? Locale { get; set; }
+
+    /// <summary>
+    /// Caller-supplied identifier echoed back on <see cref="RenderCompleted"/> so external
+    /// listeners can correlate a render with an outer request or element. Defaults to
+    /// <see cref="Guid.Empty"/> when the caller does not supply one.
+    /// </summary>
+    [Parameter] public Guid CorrelationIdentifier { get; set; }
+
+    /// <summary>
+    /// Callback invoked after the component has produced its first non-empty render.
+    /// Receives an <see cref="EjsRenderCompletedEventArgs"/> carrying the correlation
+    /// identifier and the wall-clock time taken to build the render fragment.
+    /// </summary>
+    [Parameter] public EventCallback<EjsRenderCompletedEventArgs> RenderCompleted { get; set; }
 
     /// <summary>
     /// Gets or sets the logger instance used for logging within the component.
     /// </summary>
-    [Inject]
-    public required ILogger<EjsRenderFragment> Logger { get; init; }
+    [Inject] public required ILogger<EjsRenderFragment> Logger { get; init; }
 
     /// <summary>
     /// Indicates whether the component's child's render fragment has been built.
@@ -53,22 +61,54 @@ public partial class EjsRenderFragment : ComponentBase
     /// </remarks>
     protected bool ChildRenderFragmentBuilt;
 
-    protected override void OnInitialized()
-        => BuildChildRenderFragment();
+    // note: separate internal field for the built render fragment. Previously the component
+    // reassigned ChildContent directly, but ChildContent is a [Parameter] — Blazor reassigns
+    // it on every parent re-render, wiping out the built content and reverting to whatever
+    // the parent originally passed (typically a "Loading..." placeholder).
+    private RenderFragment? _rendered_content;
 
-    protected override void OnAfterRender(bool first_render)
-        => BuildChildRenderFragment();
+    private long _render_start_timestamp;
+    private bool _render_completed_fired;
 
-    private void BuildChildRenderFragment()
+    protected override Task OnInitializedAsync()
     {
-        if (ChildRenderFragmentBuilt || string.IsNullOrWhiteSpace(Value))
+        _render_start_timestamp = Stopwatch.GetTimestamp();
+        return BuildChildRenderFragmentAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool first_render)
+    {
+        await BuildChildRenderFragmentAsync();
+
+        if (_render_completed_fired || ChildRenderFragmentBuilt is false)
         {
             return;
         }
 
-        ChildContent = new(ConvertJsonToRenderFragment);
-        StateHasChanged();
+        if (RenderCompleted.HasDelegate is false)
+        {
+            return;
+        }
+
+        await RenderCompleted.InvokeAsync(new EjsRenderCompletedEventArgs
+        {
+            CorrelationIdentifier = CorrelationIdentifier,
+            Elapsed = Stopwatch.GetElapsedTime(_render_start_timestamp)
+        });
+
+        _render_completed_fired = true;
+    }
+
+    private Task BuildChildRenderFragmentAsync()
+    {
+        if (ChildRenderFragmentBuilt || string.IsNullOrWhiteSpace(Value))
+        {
+            return Task.CompletedTask;
+        }
+
+        _rendered_content = ConvertJsonToRenderFragment;
         ChildRenderFragmentBuilt = true;
+        return InvokeAsync(StateHasChanged);
     }
 
     /// <summary>
@@ -81,7 +121,8 @@ public partial class EjsRenderFragment : ComponentBase
 
         try
         {
-            blocks = JsonSerializer.Deserialize<EditorJsBlocks>(Value) ?? throw new JsonException("Deserialised EditorJsBlocks was null.");
+            blocks = JsonSerializer.Deserialize<EditorJsBlocks>(Value)
+                ?? throw new JsonException("Deserialised EditorJsBlocks was null.");
         }
         catch (JsonException ex)
         {
@@ -91,7 +132,8 @@ public partial class EjsRenderFragment : ComponentBase
 
         try
         {
-            editor_js_styling_map = JsonSerializer.Deserialize<IEnumerable<EditorJsStylingMap>>(StylingMap) ?? [];
+            editor_js_styling_map = JsonSerializer.Deserialize<IEnumerable<EditorJsStylingMap>>(StylingMap)
+                ?? [];
         }
         catch (JsonException ex)
         {
@@ -129,7 +171,7 @@ public partial class EjsRenderFragment : ComponentBase
     /// <param name="block">The EditorJS block to render.</param>
     internal static void RenderBlock(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        if (!Enum.TryParse(block.Type, true, out SupportedRenderers renderer))
+        if (Enum.TryParse(block.Type, true, out SupportedRenderers renderer) is false || renderer == SupportedRenderers.Empty)
         {
             return;
         }

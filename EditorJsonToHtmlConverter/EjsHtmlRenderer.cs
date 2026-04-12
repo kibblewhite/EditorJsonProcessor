@@ -5,11 +5,17 @@
 /// </summary>
 /// <param name="html_renderer">The HtmlRenderer instance used to render the components.</param>
 /// <param name="data_retrieval_mode">Controls whether map blocks render embedded data or GUID references. Defaults to Embedded.</param>
+/// <param name="on_render_completed">Optional async callback invoked after a successful parse/render. Defaults to null (no callback).</param>
 /// <param name="locale">The locale used for rendering. Available to block renderers for locale-aware output (e.g. data-locale attributes). Defaults to null (omitted).</param>
-public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded, CultureInfo? locale = null)
+public sealed partial class EjsHtmlRenderer(
+    HtmlRenderer html_renderer,
+    DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded,
+    Func<EjsRenderCompletedEventArgs, Task>? on_render_completed = null,
+    CultureInfo? locale = null)
 {
     private readonly HtmlRenderer _html_renderer = html_renderer;
     private readonly DataRetrievalMode _data_retrieval_mode = data_retrieval_mode;
+    private readonly Func<EjsRenderCompletedEventArgs, Task>? _on_render_completed = on_render_completed;
     private readonly CultureInfo? _locale = locale;
 
     [GeneratedRegex(@"</?.+?>")]
@@ -21,15 +27,24 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
     /// <param name="value">The JSON output from the EditorJS block editor.</param>
     /// <param name="strip_html">When true, this will perform a basic stripping of HTML based on regular expression matching on the returning string value.</param>
     /// <param name="styling_map">The JSON string representing the styling map. Default is an empty array.</param>
+    /// <param name="correlation_identifier">Optional caller-supplied identifier echoed back on the render-completed callback. Defaults to <see cref="Guid.Empty"/>.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the generated HTML string.</returns>
-    public async Task<string> ParseAsync(string value, bool strip_html = false, string? styling_map = "[]")
+    public async Task<string> ParseAsync(string value, Guid correlation_identifier = default, bool strip_html = false, string? styling_map = "[]")
     {
+        long start = Stopwatch.GetTimestamp();
         ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode, _locale);
         string fragment = await RenderComponentAsHtmlAsync<EjsRenderFragment>(parameters);
 
-        return strip_html
-            ? WebUtility.HtmlDecode(StripHtmlRegex().Replace(fragment, string.Empty))
-            : fragment;
+        try
+        {
+            return strip_html
+                ? WebUtility.HtmlDecode(StripHtmlRegex().Replace(fragment, string.Empty))
+                : fragment;
+        }
+        finally
+        {
+            await RaiseRenderCompletedAsync(correlation_identifier, Stopwatch.GetElapsedTime(start));
+        }
     }
 
     /// <summary>
@@ -37,12 +52,29 @@ public sealed partial class EjsHtmlRenderer(HtmlRenderer html_renderer, DataRetr
     /// </summary>
     /// <param name="value">The JSON output from the EditorJS block editor.</param>
     /// <param name="styling_map">The JSON string representing the styling map. Default is an empty array.</param>
+    /// <param name="correlation_identifier">Optional caller-supplied identifier echoed back on the render-completed callback. Defaults to <see cref="Guid.Empty"/>.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the generated HTML root component.</returns>
-    public async Task<HtmlRootComponent> ParseAsHtmlRootComponentAsync(string value, string? styling_map = "[]")
+    public async Task<HtmlRootComponent> ParseAsHtmlRootComponentAsync(string value, string? styling_map = "[]", Guid correlation_identifier = default)
     {
+        long start = Stopwatch.GetTimestamp();
         ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode, _locale);
-        return await RenderComponentAsHtmlRootComponentAsync<EjsRenderFragment>(parameters);
+
+        try
+        {
+            return await RenderComponentAsHtmlRootComponentAsync<EjsRenderFragment>(parameters);
+        }
+        finally
+        {
+            await RaiseRenderCompletedAsync(correlation_identifier, Stopwatch.GetElapsedTime(start));
+        }
     }
+
+    private Task RaiseRenderCompletedAsync(Guid correlation_identifier, TimeSpan elapsed) =>
+        _on_render_completed?.Invoke(new EjsRenderCompletedEventArgs
+        {
+            CorrelationIdentifier = correlation_identifier,
+            Elapsed = elapsed
+        }) ?? Task.CompletedTask;
 
     /// <summary>
     /// Builds the parameters needed for rendering the component.

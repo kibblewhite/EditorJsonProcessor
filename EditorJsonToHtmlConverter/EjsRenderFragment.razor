@@ -1,1 +1,8 @@
-﻿@ChildContent
+﻿@if (_rendered_content is not null)
+{
+    @_rendered_content
+}
+else
+{
+    @ChildContent
+}
