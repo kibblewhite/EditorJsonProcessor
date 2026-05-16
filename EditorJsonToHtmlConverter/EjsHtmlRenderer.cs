@@ -7,16 +7,19 @@
 /// <param name="data_retrieval_mode">Controls whether map blocks render embedded data or GUID references. Defaults to Embedded.</param>
 /// <param name="on_render_completed">Optional async callback invoked after a successful parse/render. Defaults to null (no callback).</param>
 /// <param name="locale">The locale used for rendering. Available to block renderers for locale-aware output (e.g. data-locale attributes). Defaults to null (omitted).</param>
+/// <param name="tile_url_template">Tile URL template applied to every map block. Falls back to the value resolved from <see cref="EditorJsonProcessorOptions"/> when this renderer is created via DI; an explicit value here always wins. Defaults to null (omitted).</param>
 public sealed partial class EjsHtmlRenderer(
     HtmlRenderer html_renderer,
     DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded,
     Func<EjsRenderCompletedEventArgs, Task>? on_render_completed = null,
-    CultureInfo? locale = null)
+    CultureInfo? locale = null,
+    string? tile_url_template = null)
 {
     private readonly HtmlRenderer _html_renderer = html_renderer;
     private readonly DataRetrievalMode _data_retrieval_mode = data_retrieval_mode;
     private readonly Func<EjsRenderCompletedEventArgs, Task>? _on_render_completed = on_render_completed;
     private readonly CultureInfo? _locale = locale;
+    private readonly string? _tile_url_template = tile_url_template;
 
     [GeneratedRegex(@"</?.+?>")]
     private static partial Regex StripHtmlRegex();
@@ -32,7 +35,7 @@ public sealed partial class EjsHtmlRenderer(
     public async Task<string> ParseAsync(string value, Guid correlation_identifier = default, bool strip_html = false, string? styling_map = "[]")
     {
         long start = Stopwatch.GetTimestamp();
-        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode, _locale);
+        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode, _locale, _tile_url_template);
         string fragment = await RenderComponentAsHtmlAsync<EjsRenderFragment>(parameters);
 
         try
@@ -57,7 +60,7 @@ public sealed partial class EjsHtmlRenderer(
     public async Task<HtmlRootComponent> ParseAsHtmlRootComponentAsync(string value, string? styling_map = "[]", Guid correlation_identifier = default)
     {
         long start = Stopwatch.GetTimestamp();
-        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode, _locale);
+        ParameterView parameters = BuildParameters(value, styling_map, _data_retrieval_mode, _locale, _tile_url_template);
 
         try
         {
@@ -83,14 +86,16 @@ public sealed partial class EjsHtmlRenderer(
     /// <param name="styling_map">The JSON string representing the styling map. Default is an empty array.</param>
     /// <param name="data_retrieval_mode">Controls whether map blocks render embedded data or GUID references.</param>
     /// <param name="locale">The locale for rendering. Available to block renderers for locale-aware output. Null means omitted.</param>
+    /// <param name="tile_url_template">Tile URL template applied to every map block. Null means omitted; the viewer surfaces a clear missing-tile-url error in that case.</param>
     /// <returns>A ParameterView containing the parameters for the component.</returns>
-    private static ParameterView BuildParameters(string value, string? styling_map = "[]", DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded, CultureInfo? locale = null) =>
+    private static ParameterView BuildParameters(string value, string? styling_map = "[]", DataRetrievalMode data_retrieval_mode = DataRetrievalMode.Embedded, CultureInfo? locale = null, string? tile_url_template = null) =>
         ParameterView.FromDictionary(new Dictionary<string, object?>
         {
             { nameof(EjsRenderFragment.Value), value },
             { nameof(EjsRenderFragment.StylingMap), styling_map },
             { nameof(EjsRenderFragment.DataRetrievalMode), data_retrieval_mode },
-            { nameof(EjsRenderFragment.Locale), locale }
+            { nameof(EjsRenderFragment.Locale), locale },
+            { nameof(EjsRenderFragment.TileUrlTemplate), tile_url_template }
         });
 
     /// <summary>

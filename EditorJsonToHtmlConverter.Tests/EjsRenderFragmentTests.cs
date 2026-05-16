@@ -103,4 +103,140 @@ public class EjsRenderFragmentTests : Bunit.BunitContext
         cut.Find("div[data-block-type='map']");
         Assert.DoesNotContain("Loading...", cut.Markup, "After parent re-render, the ChildContent placeholder must not come back.");
     }
+
+    // ---------------------------------------------------------------------
+    // Tile URL injection tests
+    //
+    // After the editorjs-leaflet migration, tileUrl is no longer persisted in
+    // block data. The rendering layer is the source of truth: it injects the
+    // value via EditorJsonProcessorOptions / EjsRenderFragment.TileUrlTemplate
+    // and the renderer writes it into data-tile-url (reference mode) or the
+    // embedded JSON (embedded mode).
+    // ---------------------------------------------------------------------
+
+    [TestMethod]
+    public void ReferenceMode_TileUrl_EmittedFromInjectedTemplate()
+    {
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
+            .Add(p => p.Value, EjsRenderFragmentTestsHelpers.EditorJsonMapBlockReference)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Reference)
+            .Add(p => p.TileUrlTemplate, "https://configured.example/{z}/{x}/{y}.mvt")
+            .AddChildContent("<span>Loading...</span>"));
+
+        IElement container = cut.Find("div[data-block-type='map']");
+        Assert.IsTrue(container.HasAttribute("data-tile-url"), "data-tile-url should be present when TileUrlTemplate is supplied.");
+        Assert.AreEqual("https://configured.example/{z}/{x}/{y}.mvt", container.GetAttribute("data-tile-url"));
+    }
+
+    [TestMethod]
+    public void ReferenceMode_TileUrl_OmittedWhenTemplateIsNull()
+    {
+        // Block data fixture no longer carries tileUrl, and no template is supplied
+        // by the component. The renderer must NOT emit data-tile-url — letting the
+        // viewer's loud-failure guard surface the misconfiguration cleanly.
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
+            .Add(p => p.Value, EjsRenderFragmentTestsHelpers.EditorJsonMapBlockReference)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Reference)
+            .AddChildContent("<span>Loading...</span>"));
+
+        IElement container = cut.Find("div[data-block-type='map']");
+        Assert.IsFalse(container.HasAttribute("data-tile-url"), "data-tile-url must be omitted when no TileUrlTemplate is configured.");
+    }
+
+    [TestMethod]
+    public void ReferenceMode_TileUrl_LegacyBlockDataValueIsIgnored()
+    {
+        // Pre-migration block JSON with tileUrl on data — must NOT influence
+        // the rendered data-tile-url. The injected template wins; legacy data
+        // is silently ignored.
+        const string legacy_json = """
+            {
+              "time": 1,
+              "version": "2.31.5",
+              "blocks": [
+                {
+                  "id": "ref_map_legacy",
+                  "type": "map",
+                  "data": {
+                    "center": { "lat": 0, "lng": 0 },
+                    "zoom": 1,
+                    "tileUrl": "https://STALE.legacy.example/{z}/{x}/{y}.mvt",
+                    "height": 400,
+                    "venueGuids": ["00000001-0000-0000-0000-000000000001"]
+                  }
+                }
+              ]
+            }
+            """;
+
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
+            .Add(p => p.Value, legacy_json)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Reference)
+            .Add(p => p.TileUrlTemplate, "https://current.example/{z}/{x}/{y}.mvt")
+            .AddChildContent("<span>Loading...</span>"));
+
+        IElement container = cut.Find("div[data-block-type='map']");
+        Assert.AreEqual("https://current.example/{z}/{x}/{y}.mvt", container.GetAttribute("data-tile-url"),
+            "Injected TileUrlTemplate must win — legacy data.tileUrl must not leak through.");
+    }
+
+    [TestMethod]
+    public void EmbeddedMode_TileUrl_FlowsIntoInlineJson()
+    {
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
+            .Add(p => p.Value, EjsRenderFragmentTestsHelpers.EditorJsonMapBlockEmbedded)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Embedded)
+            .Add(p => p.TileUrlTemplate, "https://configured.example/{z}/{x}/{y}.mvt")
+            .AddChildContent("<span>Loading...</span>"));
+
+        IElement container = cut.Find("div[data-block-type='map']");
+        IElement? inline_json = container.QuerySelector("script[type='application/json']");
+        Assert.IsNotNull(inline_json, "Embedded mode should emit child <script type='application/json'>.");
+        Assert.Contains("\"tileUrl\":\"https://configured.example/{z}/{x}/{y}.mvt\"", inline_json.TextContent,
+            "Injected TileUrlTemplate should appear in the embedded JSON payload.");
+    }
+
+    [TestMethod]
+    public void EmbeddedMode_TileUrl_LegacyBlockDataValueIsIgnored()
+    {
+        const string legacy_json = """
+            {
+              "time": 1,
+              "version": "2.31.5",
+              "blocks": [
+                {
+                  "id": "emb_map_legacy",
+                  "type": "map",
+                  "data": {
+                    "center": { "lat": 0, "lng": 0 },
+                    "zoom": 1,
+                    "tileUrl": "https://STALE.legacy.example/{z}/{x}/{y}.mvt",
+                    "height": 400,
+                    "venueGuids": ["00000001-0000-0000-0000-000000000001"]
+                  }
+                }
+              ]
+            }
+            """;
+
+        IRenderedComponent<EjsRenderFragment> cut = Render<EjsRenderFragment>(parameters => parameters
+            .Add(p => p.Value, legacy_json)
+            .Add(p => p.StylingMap, "[]")
+            .Add(p => p.DataRetrievalMode, DataRetrievalMode.Embedded)
+            .Add(p => p.TileUrlTemplate, "https://current.example/{z}/{x}/{y}.mvt")
+            .AddChildContent("<span>Loading...</span>"));
+
+        IElement container = cut.Find("div[data-block-type='map']");
+        IElement? inline_json = container.QuerySelector("script[type='application/json']");
+        Assert.IsNotNull(inline_json);
+        string json_text = inline_json.TextContent;
+
+        Assert.Contains("https://current.example/", json_text, "Injected TileUrlTemplate must appear.");
+        Assert.DoesNotContain("STALE.legacy.example", json_text,
+            "Legacy block.Data.TileUrl must not leak into the embedded JSON output.");
+    }
 }

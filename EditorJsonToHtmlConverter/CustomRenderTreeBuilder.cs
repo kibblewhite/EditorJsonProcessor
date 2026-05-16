@@ -30,6 +30,15 @@ public class CustomRenderTreeBuilder
     public CultureInfo? Locale { get; init; }
 
     /// <summary>
+    /// Tile URL template (with <c>{z}</c>/<c>{x}</c>/<c>{y}</c> placeholders) that the
+    /// map renderer writes to <c>data-tile-url</c> in reference mode and into the
+    /// embedded JSON in embedded mode. Sourced from <see cref="EditorJsonProcessorOptions"/>
+    /// or an explicit override on <see cref="EjsRenderFragment"/>. Null means omitted —
+    /// the client-side viewer surfaces a clear missing-tile-url error in that case.
+    /// </summary>
+    public string? TileUrlTemplate { get; init; }
+
+    /// <summary>
     /// Returns the current sequence count and increments it by one. Each call to this property
     /// produces a unique sequence number for Blazor render tree operations.
     /// </summary>

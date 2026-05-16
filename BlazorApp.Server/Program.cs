@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using System.Text.Json;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -6,7 +7,32 @@ builder.Services.AddHttpClient("tiles", client =>
 {
     client.DefaultRequestHeaders.Add("User-Agent", "EditorJsonProcessor-Demo");
     client.Timeout = TimeSpan.FromSeconds(10);
-});
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+    // ⚠️ DEV / DEMO ONLY — bypasses TLS certificate validation so the tile
+    // proxy works in environments where the OS trust store is missing the
+    // intermediate CA for pull-pmtiles.fullevent.io (e.g. corporate proxies
+    // intercepting HTTPS, locked-down WSL/dev VMs, fresh CI containers).
+    //
+    // This is acceptable here because:
+    //   - The endpoint serves cacheable, public, read-only tile data
+    //   - The result is proxied through this server, not exposed to clients
+    //   - The whole solution is a demo / test harness
+    //
+    // DO NOT copy this pattern into production code. Real production should
+    // either trust the intermediate CA properly, or use a CDN whose chain
+    // validates from the standard OS trust store.
+    new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+        // Enables transparent gzip / deflate / brotli decoding for upstream responses.
+        // Vector tile servers commonly serve MVT with Content-Encoding: gzip; without
+        // this flag HttpClient would hand us the raw compressed bytes and we'd forward
+        // them to the browser labelled as uncompressed MVT — protomaps-leaflet would
+        // then silently fail to decode and the map would render with no basemap.
+        AutomaticDecompression = DecompressionMethods.All
+    });
+
 WebApplication app = builder.Build();
 
 app.UseBlazorFrameworkFiles();
@@ -16,8 +42,9 @@ app.UseStaticFiles();
 // Caches tiles in memory so repeated requests (pan back, zoom in/out) are instant.
 ConcurrentDictionary<string, byte[]> tile_cache = new();
 
-app.MapGet("/tiles/{z:int}/{x:int}/{y:int}.mvt", async (int z, int x, int y, HttpContext http_context, IHttpClientFactory http_factory) =>
+app.MapGet("/tiles/{z:int}/{x:int}/{y:int}.mvt", async (int z, int x, int y, HttpContext http_context, IHttpClientFactory http_factory, ILoggerFactory log_factory) =>
 {
+    ILogger tile_logger = log_factory.CreateLogger("Tiles");
     string cache_key = $"{z}/{x}/{y}";
     http_context.Response.Headers.CacheControl = "public, max-age=86400";
     http_context.Response.ContentType = "application/vnd.mapbox-vector-tile";
@@ -31,12 +58,29 @@ app.MapGet("/tiles/{z:int}/{x:int}/{y:int}.mvt", async (int z, int x, int y, Htt
     try
     {
         HttpClient client = http_factory.CreateClient("tiles");
-        byte[] content = await client.GetByteArrayAsync($"https://pull-pmtiles.fullevent.io/tiles/{z}/{x}/{y}.mvt");
+        byte[] content = await client.GetByteArrayAsync($"https://pull-pmtiles.internal.zone/tiles/{z}/{x}/{y}.mvt");
+
+        // Diagnostic: log size + first-byte signature so we can spot upstream
+        // returning gzip ('\x1f\x8b'), empty bodies, or HTML error pages.
+        string signature = content.Length >= 2
+            ? $"0x{content[0]:X2} 0x{content[1]:X2}"
+            : "(< 2 bytes)";
+        tile_logger.LogDebug("Tile {Z}/{X}/{Y} fetched: {Bytes} bytes, first2={Sig}", z, x, y, content.Length, signature);
+
+        // Sanity check: if upstream still hands us gzip-magic bytes despite
+        // AutomaticDecompression being enabled, log a warning. The client
+        // won't be able to decode this as MVT.
+        if (content.Length >= 2 && content[0] == 0x1f && content[1] == 0x8b)
+        {
+            tile_logger.LogWarning("Tile {Z}/{X}/{Y} still gzip-encoded after decompression. Forwarded as-is but will not render.", z, x, y);
+        }
+
         tile_cache.TryAdd(cache_key, content);
         await http_context.Response.Body.WriteAsync(content);
     }
-    catch (Exception)
+    catch (Exception ex)
     {
+        tile_logger.LogError(ex, "Tile fetch failed for {Z}/{X}/{Y}", z, x, y);
         http_context.Response.StatusCode = 504;
     }
 });

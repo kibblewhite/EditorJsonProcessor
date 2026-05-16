@@ -114,8 +114,13 @@ public class EjsHtmlRendererTests
     {
         ArgumentNullException.ThrowIfNull(_html_renderer, nameof(_html_renderer));
 
-        // Arrange
-        EjsHtmlRenderer reference_renderer = new(_html_renderer, DataRetrievalMode.Reference, locale: System.Globalization.CultureInfo.GetCultureInfo("en-GB"));
+        // Arrange — supply tile URL via the constructor (the supported injection point
+        // after the editorjs-leaflet migration; block.Data.TileUrl is ignored).
+        EjsHtmlRenderer reference_renderer = new(
+            _html_renderer,
+            DataRetrievalMode.Reference,
+            locale: System.Globalization.CultureInfo.GetCultureInfo("en-GB"),
+            tile_url_template: "/tiles/{z}/{x}/{y}.mvt");
         string json_value = EjsRenderFragmentTestsHelpers.EditorJsonMapBlockReference;
 
         // Act

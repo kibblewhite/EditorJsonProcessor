@@ -35,6 +35,13 @@ public partial class EjsRenderFragment : ComponentBase
     [Parameter] public CultureInfo? Locale { get; set; }
 
     /// <summary>
+    /// Optional per-render override for the map tile URL template. When set, takes
+    /// precedence over the value configured via <see cref="EditorJsonProcessorOptions"/>
+    /// (registered through DI). When null, the DI-configured value is used.
+    /// </summary>
+    [Parameter] public string? TileUrlTemplate { get; set; }
+
+    /// <summary>
     /// Caller-supplied identifier echoed back on <see cref="RenderCompleted"/> so external
     /// listeners can correlate a render with an outer request or element. Defaults to
     /// <see cref="Guid.Empty"/> when the caller does not supply one.
@@ -52,6 +59,12 @@ public partial class EjsRenderFragment : ComponentBase
     /// Gets or sets the logger instance used for logging within the component.
     /// </summary>
     [Inject] public required ILogger<EjsRenderFragment> Logger { get; init; }
+
+    /// <summary>
+    /// DI-injected default options. Used as the fallback when <see cref="TileUrlTemplate"/>
+    /// is not supplied as an explicit parameter.
+    /// </summary>
+    [Inject] public IOptions<EditorJsonProcessorOptions>? Options { get; init; }
 
     /// <summary>
     /// Indicates whether the component's child's render fragment has been built.
@@ -149,7 +162,8 @@ public partial class EjsRenderFragment : ComponentBase
                 Builder = builder,
                 StylingMap = editor_js_styling_map.ToList().AsReadOnly(),
                 DataRetrievalMode = DataRetrievalMode,
-                Locale = Locale
+                Locale = Locale,
+                TileUrlTemplate = TileUrlTemplate ?? Options?.Value.TileUrlTemplate
             };
 
             foreach (EditorJsBlock block in blocks.Blocks)

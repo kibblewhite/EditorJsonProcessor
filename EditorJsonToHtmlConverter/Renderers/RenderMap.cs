@@ -6,15 +6,22 @@ namespace EditorJsonToHtmlConverter.Renderers;
 /// <b>Embedded mode:</b> The consuming application resolves all GUID references to full
 /// localised objects <i>before</i> the renderer runs. The block data already contains
 /// complete venue, space, typology, POI, and activity details. The renderer serialises the
-/// entire block data into a child <c>&lt;script type="application/json"&gt;</c> element.
-/// The client JS reads this self-contained JSON and renders the map immediately — no further
-/// API calls are needed.
+/// entire block data (plus the injected <c>tileUrl</c>) into a child
+/// <c>&lt;script type="application/json"&gt;</c> element. The client JS reads this
+/// self-contained JSON and renders the map immediately — no further API calls are needed.
 ///
 /// <b>Reference mode:</b> The block data contains only flat GUID lists and map configuration
-/// (centre, zoom, tile URL, height, locale). The renderer outputs these as <c>data-*</c>
-/// attributes on the container <c>&lt;div&gt;</c>. A client-side JS viewer discovers the
-/// container, reads the attributes, and fetches full data from API endpoints using the locale
-/// specified in <c>data-locale</c>. The map renders after those calls complete.
+/// (centre, zoom, height, locale). The renderer outputs these as <c>data-*</c> attributes
+/// on the container <c>&lt;div&gt;</c>, including <c>data-tile-url</c> sourced from
+/// <see cref="CustomRenderTreeBuilder.TileUrlTemplate"/>. A client-side JS viewer discovers
+/// the container, reads the attributes, and fetches full data from API endpoints using
+/// the locale specified in <c>data-locale</c>. The map renders after those calls complete.
+///
+/// <para><b>Tile URL source-of-truth:</b> The <c>editorjs-leaflet</c> plugin no longer
+/// persists a <c>tileUrl</c> field on map block data. The rendering layer is authoritative:
+/// the injected <see cref="CustomRenderTreeBuilder.TileUrlTemplate"/> value is the only
+/// tile URL used. Any legacy <c>TileUrl</c> on incoming block data is ignored to avoid
+/// silently honouring stale CDN URLs from older saved content.</para>
 ///
 /// Does not inject any <c>&lt;script&gt;</c> or <c>&lt;link&gt;</c> tags — that is the
 /// consuming developer's responsibility.
@@ -57,15 +64,38 @@ public sealed class RenderMap : IBlockRenderer
     }
 
     /// <summary>
-    /// Renders a child script element containing the complete block data as JSON.
-    /// The GUID resolver resolves all GUIDs to full objects before rendering, so block.Data contains
-    /// map configuration, resolved venues, spaces, typologies, POIs, and activities with
-    /// all localised fields. The client JS reads this and has everything needed to render
-    /// the map immediately without further API calls.
+    /// Renders a child script element containing the complete block data as JSON
+    /// plus the injected <c>tileUrl</c>. The GUID resolver resolves all GUIDs to
+    /// full objects before rendering, so block.Data contains map configuration,
+    /// resolved venues, spaces, typologies, POIs, and activities with all localised
+    /// fields. The client JS reads this and has everything needed to render the
+    /// map immediately without further API calls.
     /// </summary>
     private static void RenderEmbeddedMode(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        string json = JsonSerializer.Serialize(block.Data, SerialiserOptions);
+        // Build the embedded JSON from a wrapper object rather than serialising
+        // block.Data directly. This lets the renderer inject the authoritative
+        // tileUrl (from CustomRenderTreeBuilder.TileUrlTemplate) without mutating
+        // the input model, and explicitly excludes the obsolete TileUrl field
+        // from the persisted block data shape.
+        var payload = new
+        {
+            center = block.Data.Center,
+            zoom = block.Data.Zoom,
+            tileUrl = render_tree_builder.TileUrlTemplate,
+            height = block.Data.Height,
+            venueGuids = block.Data.VenueGuids,
+            spaceGuids = block.Data.SpaceGuids,
+            typologyGuids = block.Data.TypologyGuids,
+            activityGuids = block.Data.ActivityGuids,
+            venues = block.Data.Venues,
+            spaces = block.Data.Spaces,
+            typologies = block.Data.Typologies,
+            pois = block.Data.Pois,
+            activities = block.Data.Activities
+        };
+
+        string json = JsonSerializer.Serialize(payload, SerialiserOptions);
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "script");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "type", "application/json");
@@ -79,6 +109,8 @@ public sealed class RenderMap : IBlockRenderer
     /// point contains only flat GUID lists as stored by the EditorJS plugin. A client-side JS
     /// viewer discovers these containers, reads the attributes, and fetches full venue, space,
     /// typology, POI, and activity details from API endpoints using the <c>data-locale</c> value.
+    /// The <c>data-tile-url</c> attribute is sourced from the injected
+    /// <see cref="CustomRenderTreeBuilder.TileUrlTemplate"/>, never from block data.
     /// </summary>
     private static void RenderReferenceMode(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
@@ -98,9 +130,12 @@ public sealed class RenderMap : IBlockRenderer
             render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-zoom", block.Data.Zoom.Value.ToString());
         }
 
-        if (!string.IsNullOrWhiteSpace(block.Data.TileUrl))
+        // Tile URL is sourced from the renderer config (CustomRenderTreeBuilder.TileUrlTemplate),
+        // NOT from block.Data.TileUrl — any value persisted there is silently ignored so old
+        // saved content can't leak stale CDN URLs.
+        if (!string.IsNullOrWhiteSpace(render_tree_builder.TileUrlTemplate))
         {
-            render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-tile-url", block.Data.TileUrl);
+            render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-tile-url", render_tree_builder.TileUrlTemplate);
         }
 
         if (block.Data.Height.HasValue)

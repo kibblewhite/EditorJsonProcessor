@@ -252,7 +252,6 @@ internal static class EjsRenderFragmentTestsHelpers
               "data": {
                 "center": { "lat": 51.5065, "lng": -0.0760 },
                 "zoom": 16,
-                "tileUrl": "/tiles/{z}/{x}/{y}.mvt",
                 "height": 600,
                 "venueGuids": ["00000001-0000-0000-0000-000000000001"],
                 "spaceGuids": ["00000002-0000-0000-0000-000000000001"],
@@ -292,7 +291,6 @@ internal static class EjsRenderFragmentTestsHelpers
               "data": {
                 "center": { "lat": 51.5065, "lng": -0.0760 },
                 "zoom": 16,
-                "tileUrl": "/tiles/{z}/{x}/{y}.mvt",
                 "height": 600,
                 "venueGuids": ["00000001-0000-0000-0000-000000000001", "00000001-0000-0000-0000-000000000002"],
                 "spaceGuids": ["00000002-0000-0000-0000-000000000001"],

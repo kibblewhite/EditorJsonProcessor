@@ -20,6 +20,9 @@ public partial class Reference : ComponentBase
 
     protected static CultureInfo Locale => CultureInfo.GetCultureInfo("en-GB");
 
+    /// <summary>Tile URL used by the map block. Hits the proxy on BlazorApp.Server.</summary>
+    protected const string TileUrlTemplate = "/tiles/{z}/{x}/{y}.mvt";
+
     protected const string StylingMap = "[]";
 
     /// <summary>
@@ -47,7 +50,6 @@ public partial class Reference : ComponentBase
               "data": {
                 "center": { "lat": 51.5065, "lng": -0.0760 },
                 "zoom": 16,
-                "tileUrl": "/tiles/{z}/{x}/{y}.mvt",
                 "height": 600,
                 "venueGuids": ["00000001-0000-0000-0000-000000000001", "00000001-0000-0000-0000-000000000002", "00000001-0000-0000-0000-000000000003"],
                 "spaceGuids": ["00000002-0000-0000-0000-000000000001", "00000002-0000-0000-0000-000000000002", "00000002-0000-0000-0000-000000000003", "00000002-0000-0000-0000-000000000004"],
@@ -71,7 +73,7 @@ public partial class Reference : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        EjsHtmlRenderer reference_renderer = new(HtmlRenderer, DataRetrievalMode.Reference, OnRenderCompletedAsync, Locale);
+        EjsHtmlRenderer reference_renderer = new(HtmlRenderer, DataRetrievalMode.Reference, OnRenderCompletedAsync, Locale, tile_url_template: "/tiles/{z}/{x}/{y}.mvt");
         RenderedHtml = await reference_renderer.ParseAsync(EditorJsJson, Guid.CreateVersion7());
     }
 

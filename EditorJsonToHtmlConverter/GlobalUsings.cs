@@ -5,6 +5,7 @@ global using Microsoft.AspNetCore.Components.Rendering;
 global using Microsoft.AspNetCore.Components.Web;
 global using Microsoft.AspNetCore.Components.Web.HtmlRendering;
 global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Options;
 global using Microsoft.Extensions.Logging;
 global using System.Globalization;
 global using System.Net;

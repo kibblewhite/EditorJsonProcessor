@@ -157,8 +157,13 @@ public sealed class EditorJsBlockData : IEditorJsEntity<EditorJsBlockData>
     public int? Zoom { get; set; }
 
     /// <summary>
-    /// Gets or sets the tile URL for map blocks.
+    /// Legacy field — no longer authoritative. The editorjs-leaflet plugin no longer
+    /// persists tileUrl on block data; the rendering layer is the source of truth
+    /// (see <see cref="EditorJsonProcessorOptions.TileUrlTemplate"/>). Retained here
+    /// so block JSON saved before the migration deserialises without error; the
+    /// renderer ignores this value.
     /// </summary>
+    [Obsolete("tileUrl is no longer persisted on block data. Set EditorJsonProcessorOptions.TileUrlTemplate via DI instead. This property is retained only so legacy JSON can still deserialise; the renderer ignores its value.")]
     [JsonPropertyName("tileUrl")]
     public string? TileUrl { get; set; }
 
