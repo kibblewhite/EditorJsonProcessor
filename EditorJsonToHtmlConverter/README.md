@@ -16,6 +16,26 @@ builder.Services.AddScopedEditorJsonProcessorServices();
 
 This registers both `Microsoft.AspNetCore.Components.Web.HtmlRenderer` and `EjsHtmlRenderer` as scoped services.
 
+### Configuring renderer-level options
+
+If you render `map` blocks, you must supply a tile URL template — the `editorjs-leaflet` plugin no longer persists `tileUrl` on block data, so the rendering layer is the source of truth. Use the `Action<EditorJsonProcessorOptions>` overload:
+
+```csharp
+builder.Services.AddScopedEditorJsonProcessorServices(opts =>
+{
+    // Standard Leaflet placeholders: {z}, {x}, {y}
+    opts.TileUrlTemplate = "https://your-cdn.example/tiles/{z}/{x}/{y}.mvt";
+});
+```
+
+The configured `TileUrlTemplate` flows through to every map block automatically:
+
+- **DI-resolved `EjsHtmlRenderer`** — picked up by the factory registration.
+- **Manually-constructed `EjsHtmlRenderer`** — still picked up, because the inner `EjsRenderFragment` injects `IOptions<EditorJsonProcessorOptions>` and falls back to it when no explicit override is supplied.
+- **`EjsRenderFragment` used directly in a `.razor` page** — picked up via the same `IOptions` injection.
+
+An explicit `tile_url_template` constructor argument on `EjsHtmlRenderer` (or `TileUrlTemplate` parameter on `EjsRenderFragment`) always wins over the DI-configured value. When neither path supplies a value, `data-tile-url` / the embedded `tileUrl` field is omitted and the client-side viewer surfaces a missing-tile-url error.
+
 ## Usage
 
 ### EjsHtmlRenderer (Server-Side)
@@ -25,7 +45,8 @@ Inject `HtmlRenderer` and construct `EjsHtmlRenderer` with the desired mode and 
 ```csharp
 string editor_json = "{ ... }";
 
-// Default: Embedded mode, no locale
+// Default: Embedded mode, no locale, no tile URL override
+// (map blocks use the DI-configured TileUrlTemplate via IOptions fallback)
 EjsHtmlRenderer renderer = new(htmlRenderer);
 string html = await renderer.ParseAsync(editor_json);
 
@@ -40,6 +61,16 @@ string styled_html = await renderer.ParseAsync(editor_json, styling_map: styling
 CultureInfo locale = new("en-GB");
 EjsHtmlRenderer reference_renderer = new(htmlRenderer, DataRetrievalMode.Reference, locale: locale);
 string reference_html = await reference_renderer.ParseAsync(editor_json);
+
+// Explicit tile URL override — wins over the DI-configured value. Use this
+// when manually constructing the renderer outside DI, or when a single render
+// needs a different tile server (e.g. dev vs prod, per-tenant CDN).
+EjsHtmlRenderer map_renderer = new(
+    htmlRenderer,
+    DataRetrievalMode.Reference,
+    locale: locale,
+    tile_url_template: "https://your-cdn.example/tiles/{z}/{x}/{y}.mvt");
+string map_html = await map_renderer.ParseAsync(editor_json);
 
 // Reference mode with a render-completed callback for correlation/timing
 EjsHtmlRenderer instrumented_renderer = new(
@@ -66,6 +97,7 @@ HtmlRootComponent root = await renderer.ParseAsHtmlRootComponentAsync(editor_jso
 | `data_retrieval_mode` | `DataRetrievalMode` | `Embedded` | Controls map block rendering mode |
 | `on_render_completed` | `Func<EjsRenderCompletedEventArgs, Task>?` | `null` | Async callback invoked after each successful parse. Receives the caller-supplied correlation identifier and the wall-clock render duration. |
 | `locale` | `CultureInfo?` | `null` | Locale for rendering. Available to block renderers for locale-aware output (e.g. `data-locale` attributes). Invalid cultures are silently ignored. |
+| `tile_url_template` | `string?` | `null` | Map tile URL template (Leaflet `{z}/{x}/{y}` placeholders). When non-null, overrides the value resolved from `EditorJsonProcessorOptions` (registered via `AddScopedEditorJsonProcessorServices(configure)`). When null, the DI-configured value is used; when neither is set, `data-tile-url` / the embedded `tileUrl` field is omitted and the client-side viewer surfaces a missing-tile-url error. |
 
 **`ParseAsync` parameters:**
 
@@ -85,11 +117,14 @@ HtmlRootComponent root = await renderer.ParseAsHtmlRootComponentAsync(editor_jso
     <span>Loading...</span>
 </EjsRenderFragment>
 
-<!-- With locale, correlation identifier, and render-completed callback -->
+<!-- With locale, correlation identifier, render-completed callback, and
+     an explicit tile URL override (otherwise falls back to the DI-configured
+     EditorJsonProcessorOptions.TileUrlTemplate) -->
 <EjsRenderFragment Value="@editor_json"
                    StylingMap="@styling_json"
                    DataRetrievalMode="DataRetrievalMode.Reference"
                    Locale="@(new CultureInfo("en-GB"))"
+                   TileUrlTemplate="https://your-cdn.example/tiles/{z}/{x}/{y}.mvt"
                    CorrelationIdentifier="@_correlation_identifier"
                    RenderCompleted="OnRenderCompletedAsync">
     <span>Loading...</span>
@@ -107,6 +142,7 @@ HtmlRootComponent root = await renderer.ParseAsHtmlRootComponentAsync(editor_jso
 | `DataRetrievalMode` | `DataRetrievalMode` | *(required)* | Controls map block rendering mode |
 | `ChildContent` | `RenderFragment` | *(required)* | Placeholder shown until the JSON has been parsed and the converted block markup replaces it (typically a "Loading..." element). |
 | `Locale` | `CultureInfo?` | `null` | Locale for rendering. Available to block renderers for locale-aware output. |
+| `TileUrlTemplate` | `string?` | `null` | Map tile URL template (Leaflet `{z}/{x}/{y}` placeholders). When non-null, overrides the value resolved from the DI-configured `EditorJsonProcessorOptions`. When null, the DI-configured value is used; when neither is set, `data-tile-url` / the embedded `tileUrl` field is omitted. |
 | `CorrelationIdentifier` | `Guid` | `Guid.Empty` | Optional caller-supplied identifier echoed back on `RenderCompleted`. Useful for correlating a render with an outer request or element. **Generate once per component instance** — do not bind `@Guid.CreateVersion7()` inline in the markup, as that produces a new value on every parent re-render, which causes Blazor to push a parameter change into the component on every parent render. |
 | `RenderCompleted` | `EventCallback<EjsRenderCompletedEventArgs>` | *(none)* | Fires once after the first successful build of the render fragment. Receives the correlation identifier and the wall-clock time taken. |
 
@@ -133,7 +169,15 @@ Vimeo, YouTube, Coub, Facebook, Instagram, Twitter, Twitch (channel & video), Mi
 
 ## Map Block
 
-The `map` block renders an interactive map container for the [editorjs-leaflet](https://byteloch-shared.gitlab.io/libraries/editorjs-leaflet/) plugin. The block data includes map configuration (centre, zoom, tile URL, height), GUID references to venues, spaces, typologies, and activities, and optionally resolved data arrays for embedded mode.
+The `map` block renders an interactive map container for the [editorjs-leaflet](https://byteloch-shared.gitlab.io/libraries/editorjs-leaflet/) plugin. The block data includes map configuration (centre, zoom, height), GUID references to venues, spaces, typologies, and activities, and optionally resolved data arrays for embedded mode.
+
+### Tile URL is renderer-injected, not block-persisted
+
+From `editorjs-leaflet` 0.0.15 onwards, the plugin no longer writes `tileUrl` into block data. The rendering layer is the single source of truth:
+
+- Configure it once via `EditorJsonProcessorOptions.TileUrlTemplate` (see [Configuring renderer-level options](#configuring-renderer-level-options)), or pass `tile_url_template` / `TileUrlTemplate` per render.
+- Any legacy `tileUrl` field on saved JSON is silently ignored by the renderer — this prevents stale CDN URLs from old saved content leaking through.
+- `EditorJsBlockData.TileUrl` is marked `[Obsolete]` and retained only so pre-migration JSON still deserialises.
 
 ### DataRetrievalMode
 
@@ -143,6 +187,8 @@ Controls how `map` blocks render their data:
 - **`Reference`** -- Outputs `data-*` attributes with GUID references and configuration on the container element, deferring data resolution to client-side JavaScript. Block renderers may use the `Locale` to output a `data-locale` attribute for locale-aware API calls. When `Locale` is null, locale-dependent attributes are omitted.
 
 ### Embedded Mode Output
+
+The `tileUrl` field below is **injected by the renderer** from the configured `TileUrlTemplate`, not read from the input block data:
 
 ```html
 <div id="block-abc123" data-block-type="map">
@@ -162,6 +208,8 @@ Controls how `map` blocks render their data:
 ```
 
 ### Reference Mode Output
+
+`data-tile-url` is sourced from the renderer's configured `TileUrlTemplate`; if no value is supplied the attribute is omitted entirely:
 
 ```html
 <div id="block-abc123"
@@ -205,7 +253,6 @@ In reference mode, GUID strings are validated using `Guid.TryParse` before being
 |---|---|---|
 | `center` | `{ lat, lng }` | Map centre coordinates |
 | `zoom` | `int` | Zoom level |
-| `tileUrl` | `string` | Tile layer URL template |
 | `height` | `int` | Container height in pixels |
 | `venueGuids` | `string[]` | Venue GUID references |
 | `spaceGuids` | `string[]` | Space GUID references |
@@ -216,6 +263,8 @@ In reference mode, GUID strings are validated using `Guid.TryParse` before being
 | `typologies` | `object[]` | Resolved typology data (embedded mode) |
 | `pois` | `object[]` | Resolved POI data (embedded mode) |
 | `activities` | `object[]` | Resolved activity data (embedded mode) |
+
+> **Note:** `tileUrl` previously appeared on this model but is no longer block-persisted as of `editorjs-leaflet` 0.0.15. The `EditorJsBlockData.TileUrl` property is `[Obsolete]` and ignored by the renderer; supply the tile URL via `EditorJsonProcessorOptions.TileUrlTemplate` (DI) or `tile_url_template` / `TileUrlTemplate` (per render) instead.
 
 ## BlazorApp Demo
 
