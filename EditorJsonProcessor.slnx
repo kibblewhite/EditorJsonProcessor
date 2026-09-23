@@ -4,6 +4,9 @@
     <File Path="EditorJsonToHtmlConverter/LICENSE" />
     <File Path="EditorJsonToHtmlConverter/README.md" />
   </Folder>
+  <Folder Name="/Solution Items/.github/workflows/">
+    <File Path=".github/workflows/publish.yml" />
+  </Folder>
   <Project Path="BlazorApp.Client/BlazorApp.Client.csproj" />
   <Project Path="BlazorApp.Server/BlazorApp.Server.csproj" />
   <Project Path="EditorJsonToHtmlConverter.Tests/EditorJsonToHtmlConverter.Tests.csproj" />

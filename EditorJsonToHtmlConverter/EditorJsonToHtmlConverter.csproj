@@ -57,7 +57,19 @@
 	<ItemGroup>
 		<None Include="Properties\Documentation.targets" Pack="true" PackagePath="build\EditorJsonToHtmlConverter.targets" />
 		<None Include="Properties\Documentation.Transitive.targets" Pack="true" PackagePath="buildTransitive\EditorJsonToHtmlConverter.targets" />
-		<None Include="$(DocumentationFile)" Pack="true" PackagePath="build\EditorJsonToHtmlConverter.xml" Visible="false" />
 	</ItemGroup>
+
+	<!-- // The XML copy is added at pack time rather than as a static item: $(DocumentationFile) lives under obj\, and
+	     // Solution Explorer draws the folders of every evaluated item even when Visible="false", which surfaced an
+	     // empty obj\Debug\<tfm>\ tree in the project. -->
+	<PropertyGroup>
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_PackEditorJsDocumentationFile</TargetsForTfmSpecificContentInPackage>
+	</PropertyGroup>
+
+	<Target Name="_PackEditorJsDocumentationFile">
+		<ItemGroup>
+			<TfmSpecificPackageFile Include="$(DocumentationFile)" PackagePath="build\EditorJsonToHtmlConverter.xml" />
+		</ItemGroup>
+	</Target>
 
 </Project>
