@@ -8,9 +8,9 @@
 /// <para>
 /// <b>Documentation contract — read this before adding a renderer.</b> The XML documentation on an
 /// implementing class is not commentary. It is emitted into <c>EditorJsonToHtmlConverter.xml</c>, shipped
-/// beside the assembly, and read <i>at runtime</i> by downstream consumers: the assistants MCP server
-/// reflects every <see cref="IBlockRenderer"/>, reads <see cref="BlockType"/>, and serves these elements to
-/// a reasoning model so it can author block JSON unaided. A renderer documented to this contract is
+/// beside the assembly, and can be read <i>at runtime</i> by downstream consumers: for example, a tool
+/// server can reflect every <see cref="IBlockRenderer"/>, read <see cref="BlockType"/>, and serve these
+/// elements to a language model so it can author block JSON unaided. A renderer documented to this contract is
 /// therefore understood everywhere with no further change anywhere; one that is not appears with its block
 /// type alone and the model has to guess the rest.
 /// </para>

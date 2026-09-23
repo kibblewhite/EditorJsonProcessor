@@ -42,8 +42,8 @@
 		</Content>
 	</ItemGroup>
 
-	<!-- // The renderers' XML documentation is a runtime artefact, not just IntelliSense: assistants.mcp reflects
-	     // IBlockRenderer and reads these elements to describe every supported block to a reasoning model.
+	<!-- // The renderers' XML documentation is a runtime artefact, not just IntelliSense: consumers can reflect
+	     // IBlockRenderer and read these elements to describe every supported block to tooling or a language model.
 	     //
 	     // Source lives under Properties\ purely for tidiness; the PackagePath is what matters. Those destination names
 	     // are NOT free: NuGet auto-imports a build asset only when it is named after the package id, and the folders

@@ -375,6 +375,31 @@ EditorJsBlocks blocks = EditorJsBlocks.Empty
     .AddEmptyBlock();
 ```
 
+## Block Documentation at Runtime
+
+Every block renderer carries XML documentation describing its block: what it renders, when to choose it, each `data` field it reads, and a complete example block. Each renderer also declares the block type it serves through the static `IBlockRenderer.BlockType` property, so the full set of supported blocks can be discovered by reflecting `IBlockRenderer` rather than by maintaining a separate list.
+
+That documentation is useful beyond IntelliSense -- for example, to describe the supported blocks to tooling or a language model that authors Editor.js JSON. To read it at runtime, the XML file has to sit beside your application, and NuGet never copies package documentation into build output on its own. Opt in with:
+
+```xml
+<PropertyGroup>
+    <IncludeEditorJsDocumentationFile>true</IncludeEditorJsDocumentationFile>
+</PropertyGroup>
+```
+
+`EditorJsonToHtmlConverter.xml` is then copied into the build and publish output. Set the property on the project that produces the executable -- the copy also flows through a library project that references this package, so the application does not need a direct reference of its own.
+
+The copy works in container builds too. The official `dotnet/sdk` images set `NUGET_XMLDOC_MODE=skip`, which discards the documentation file that normally sits beside the assembly, so the package ships a second copy that restore leaves intact.
+
+## Adding a Block Renderer
+
+1. Add a member to `SupportedRenderers`. A block's `type` string is matched to it case-insensitively.
+2. Add a `public sealed class Render{Type} : IBlockRenderer` under `Renderers/`, declaring `BlockType` and implementing `Render`.
+3. Document the class to the contract set out on `IBlockRenderer` -- a one-sentence `<summary>`, `<remarks>` covering when to use the block and every `data` field it reads, and an `<example>` containing one complete, valid block. The example must include `id` (see [Caveat](#caveat)).
+4. Add the dispatch case in `EjsRenderFragment`.
+
+The new block then appears in the runtime documentation with no further change.
+
 ## Caveat
 
 All blocks **must** include an `id` field. Editor.js sometimes omits `id` on certain block types (e.g., delimiter). The following will fail to deserialise:

@@ -1,7 +1,7 @@
 namespace EditorJsonToHtmlConverter.Renderers;
 
 /// <summary>
-/// Renders an interactive map of places already held in the estate, referenced by identifier.
+/// Renders an interactive map of places the consuming application already holds, referenced by identifier.
 /// </summary>
 /// <remarks>
 /// <para>

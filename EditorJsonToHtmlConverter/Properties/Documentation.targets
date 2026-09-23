@@ -5,8 +5,8 @@
 	<!-- // -->
 	<!-- // Copies this package's XML documentation into the consuming project's build and publish output so it can be -->
 	<!-- // read at RUNTIME, not just by an IDE. The renderers' documentation is a machine-readable description of every -->
-	<!-- // supported Editor.js block: assistants.mcp reflects IBlockRenderer, reads BlockType, and serves these elements -->
-	<!-- // to a reasoning model so it can author block JSON unaided. NuGet never copies package XML documentation on its -->
+	<!-- // supported Editor.js block, which a consumer can reflect via IBlockRenderer.BlockType and hand to tooling or a -->
+	<!-- // language model so it can author block JSON unaided. NuGet never copies package XML documentation on its -->
 	<!-- // own, so consumers opt in with <IncludeEditorJsDocumentationFile>true</IncludeEditorJsDocumentationFile>. -->
 	<!-- // -->
 	<!-- // The copy read here sits next to this targets file rather than under lib\<tfm>\ because the official -->
