@@ -1,0 +1,8 @@
+<Project>
+
+	<!-- // Packed as buildTransitive\EditorJsonToHtmlConverter.targets. Flows the documentation copy past a direct -->
+	<!-- // reference: assistants.mcp references this package from its Logic project but needs the file beside its Server -->
+	<!-- // executable. Mirrors how this package's SDK-generated *.props already chain back to build\. -->
+	<Import Project="..\build\EditorJsonToHtmlConverter.targets" />
+
+</Project>

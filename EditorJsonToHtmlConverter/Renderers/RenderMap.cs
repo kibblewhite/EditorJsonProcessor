@@ -1,33 +1,66 @@
 namespace EditorJsonToHtmlConverter.Renderers;
 
 /// <summary>
-/// Renders a map block as an HTML container element. Two rendering modes exist:
-///
-/// <b>Embedded mode:</b> The consuming application resolves all GUID references to full
-/// localised objects <i>before</i> the renderer runs. The block data already contains
-/// complete venue, space, typology, POI, and activity details. The renderer serialises the
-/// entire block data (plus the injected <c>tileUrl</c>) into a child
-/// <c>&lt;script type="application/json"&gt;</c> element. The client JS reads this
-/// self-contained JSON and renders the map immediately — no further API calls are needed.
-///
-/// <b>Reference mode:</b> The block data contains only flat GUID lists and map configuration
-/// (centre, zoom, height, locale). The renderer outputs these as <c>data-*</c> attributes
-/// on the container <c>&lt;div&gt;</c>, including <c>data-tile-url</c> sourced from
-/// <see cref="CustomRenderTreeBuilder.TileUrlTemplate"/>. A client-side JS viewer discovers
-/// the container, reads the attributes, and fetches full data from API endpoints using
-/// the locale specified in <c>data-locale</c>. The map renders after those calls complete.
-///
-/// <para><b>Tile URL source-of-truth:</b> The <c>editorjs-leaflet</c> plugin no longer
-/// persists a <c>tileUrl</c> field on map block data. The rendering layer is authoritative:
-/// the injected <see cref="CustomRenderTreeBuilder.TileUrlTemplate"/> value is the only
-/// tile URL used. Any legacy <c>TileUrl</c> on incoming block data is ignored to avoid
-/// silently honouring stale CDN URLs from older saved content.</para>
-///
-/// Does not inject any <c>&lt;script&gt;</c> or <c>&lt;link&gt;</c> tags — that is the
-/// consuming developer's responsibility.
+/// Renders an interactive map of places already held in the estate, referenced by identifier.
 /// </summary>
+/// <remarks>
+/// <para>
+/// A map block does not describe geography of its own: it names existing venue, space, typology, point-of-interest
+/// and activity records, and the viewer draws them. There is no freehand drawing, no arbitrary marker and no
+/// pin at a bare coordinate — a place must already exist as a record before a map can show it. The centre and
+/// zoom only frame the view; they do not add anything to it.
+/// </para>
+/// <para>
+/// <c>venueGuids</c>, <c>spaceGuids</c>, <c>typologyGuids</c> (all optional) — identifier lists naming what the
+/// map shows. <c>activityGuids</c> (optional) — activity references, each pairing the activity identifier with
+/// the space identifier captured when the block was saved. Entries that are empty or all-zero identifiers are
+/// discarded, so a block naming nothing renders an empty map.
+/// </para>
+/// <para>
+/// <c>center</c> (optional) — the starting centre as <c>lat</c> and <c>lng</c>. <c>zoom</c> (optional) — the
+/// starting zoom level. <c>height</c> (optional) — the map's height in pixels.
+/// </para>
+/// <para>
+/// <b>Two rendering modes.</b> In <i>embedded</i> mode the consuming application resolves every identifier to a
+/// full localised record before the renderer runs, and the whole payload is written into a child
+/// <c>&lt;script type="application/json"&gt;</c> element, so the client draws the map immediately with no further
+/// calls. In <i>reference</i> mode the block still holds only identifiers and configuration; these are written as
+/// <c>data-*</c> attributes on the container, and a client-side viewer fetches the records itself using the locale
+/// in <c>data-locale</c>. Authoring is identical either way — the mode is the consumer's choice, not the author's.
+/// </para>
+/// <para>
+/// <b>Tile URL source of truth.</b> The <c>editorjs-leaflet</c> plugin no longer persists a <c>tileUrl</c> on block
+/// data. The rendering layer is authoritative: the injected <see cref="CustomRenderTreeBuilder.TileUrlTemplate"/>
+/// is the only tile URL used, and any legacy <c>tileUrl</c> on incoming data is ignored rather than silently
+/// honouring a stale CDN address from older saved content.
+/// </para>
+/// <para>
+/// The renderer injects no <c>&lt;script&gt;</c> or <c>&lt;link&gt;</c> tags; supplying the viewer assets is the
+/// consuming application's responsibility.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// {
+///   "id": "m1a2b3c4d5",
+///   "type": "map",
+///   "data": {
+///     "venueGuids": [ "6f9619ff-8b86-d011-b42d-00cf4fc964ff" ],
+///     "spaceGuids": [ ],
+///     "typologyGuids": [ ],
+///     "activityGuids": [ ],
+///     "center": { "lat": 51.5072, "lng": -0.1276 },
+///     "zoom": 14,
+///     "height": 400
+///   }
+/// }
+/// </code>
+/// </example>
 public sealed class RenderMap : IBlockRenderer
 {
+    /// <inheritdoc />
+    public static SupportedRenderers BlockType => SupportedRenderers.Map;
+
     private static readonly Guid EmptyGuid = Guid.Empty;
     private static readonly JsonSerializerOptions SerialiserOptions = new() { WriteIndented = false };
 

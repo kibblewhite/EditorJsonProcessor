@@ -1,7 +1,42 @@
 ﻿namespace EditorJsonToHtmlConverter.Renderers;
 
+/// <summary>
+/// Renders third-party media embedded from a recognised service.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Use an embed to place hosted media — a video, a track, a map from a public provider — inside a body. The
+/// renderer emits the provider's own frame; it does not proxy, download or validate the media.
+/// </para>
+/// <para>
+/// <c>service</c> (required) — the provider key, matched case-insensitively, which selects how the frame is
+/// built; an unrecognised service renders no frame. <c>embed</c> (required) — the provider's embed URL.
+/// <c>source</c> (optional) — the original page URL the embed was created from. <c>width</c> and
+/// <c>height</c> (optional, default 0) — the frame size in pixels. <c>caption</c> (optional) — a line
+/// rendered beneath the frame.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// {
+///   "id": "e1a2b3c4d5",
+///   "type": "embed",
+///   "data": {
+///     "service": "youtube",
+///     "source": "https://www.youtube.com/watch?v=00000000000",
+///     "embed": "https://www.youtube.com/embed/00000000000",
+///     "width": 580,
+///     "height": 320,
+///     "caption": "Last year's highlights"
+///   }
+/// }
+/// </code>
+/// </example>
 public sealed class RenderEmbed : IBlockRenderer
 {
+    /// <inheritdoc />
+    public static SupportedRenderers BlockType => SupportedRenderers.Embed;
+
     private static readonly SearchValues<char> s_gist_id_allowed_chars = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-");
     /// <summary>
     /// Renders the "Embed" block.

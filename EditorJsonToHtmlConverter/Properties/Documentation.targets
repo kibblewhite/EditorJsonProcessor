@@ -1,0 +1,30 @@
+<Project>
+
+	<!-- // Packed as build\EditorJsonToHtmlConverter.targets - NuGet auto-imports a build asset only when it is named -->
+	<!-- // after the package id, so the destination name is fixed even though this source file is not. -->
+	<!-- // -->
+	<!-- // Copies this package's XML documentation into the consuming project's build and publish output so it can be -->
+	<!-- // read at RUNTIME, not just by an IDE. The renderers' documentation is a machine-readable description of every -->
+	<!-- // supported Editor.js block: assistants.mcp reflects IBlockRenderer, reads BlockType, and serves these elements -->
+	<!-- // to a reasoning model so it can author block JSON unaided. NuGet never copies package XML documentation on its -->
+	<!-- // own, so consumers opt in with <IncludeEditorJsDocumentationFile>true</IncludeEditorJsDocumentationFile>. -->
+	<!-- // -->
+	<!-- // The copy read here sits next to this targets file rather than under lib\<tfm>\ because the official -->
+	<!-- // dotnet/sdk container images set NUGET_XMLDOC_MODE=skip, which makes restore discard XML documentation that -->
+	<!-- // sits beside an assembly. A build reading lib\<tfm>\ would succeed on a developer machine and silently produce -->
+	<!-- // nothing in CI. -->
+	<Target Name="_Documentation_IncludeEditorJsDocumentationFile" BeforeTargets="AssignTargetPaths" Condition=" '$(IncludeEditorJsDocumentationFile)' == 'true' ">
+
+		<PropertyGroup>
+			<_EditorJsDocumentationFile>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</_EditorJsDocumentationFile>
+		</PropertyGroup>
+
+		<Error Condition=" !Exists('$(_EditorJsDocumentationFile)') " Text="IncludeEditorJsDocumentationFile is true but '$(_EditorJsDocumentationFile)' does not exist. The package must be built from EditorJsonToHtmlConverter 1.0.0.28 or later, which ships the XML documentation file next to this targets file." />
+
+		<ItemGroup>
+			<None Include="$(_EditorJsDocumentationFile)" Link="$(MSBuildThisFileName).xml" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+		</ItemGroup>
+
+	</Target>
+
+</Project>

@@ -1,7 +1,33 @@
 ﻿namespace EditorJsonToHtmlConverter.Renderers;
 
+/// <summary>
+/// Renders a callout that draws the reader's attention to something important.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Use a warning sparingly, for information a reader would be materially worse off missing — a cut-off
+/// date, an access restriction, a safety note. Overuse flattens its effect.
+/// </para>
+/// <para>
+/// <c>title</c> (optional) — the short heading, rendered in bold and omitted when absent.
+/// <c>message</c> (optional) — the body, rendered as its own paragraph and likewise omitted when absent.
+/// Both preserve inline HTML. A block carrying neither renders an empty container.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// {
+///   "id": "w1a2b3c4d5",
+///   "type": "warning",
+///   "data": { "title": "Last entry", "message": "Doors close at 9pm and late arrivals cannot be admitted." }
+/// }
+/// </code>
+/// </example>
 public sealed class RenderWarning : IBlockRenderer
 {
+    /// <inheritdoc />
+    public static SupportedRenderers BlockType => SupportedRenderers.Warning;
+
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
         string id = block.Id;

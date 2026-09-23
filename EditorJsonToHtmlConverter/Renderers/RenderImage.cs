@@ -1,7 +1,34 @@
 ﻿namespace EditorJsonToHtmlConverter.Renderers;
 
+/// <summary>
+/// Renders an image with an optional caption and presentation flags.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The renderer references an image by URL; it neither uploads nor hosts one, so the URL must already
+/// resolve for the reader.
+/// </para>
+/// <para>
+/// <c>url</c> (required) — the image source. <c>caption</c> (optional) — used as the image's alternative
+/// text, so it should describe the image rather than decorate it. <c>withBorder</c>, <c>withBackground</c>
+/// and <c>stretched</c> (all optional, default false) — presentation flags controlling the border,
+/// background fill, and whether the image spans the full content width.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// {
+///   "id": "i1a2b3c4d5",
+///   "type": "image",
+///   "data": { "url": "https://example.test/venue.jpg", "caption": "The main hall set for dinner", "stretched": true }
+/// }
+/// </code>
+/// </example>
 public sealed class RenderImage : IBlockRenderer
 {
+    /// <inheritdoc />
+    public static SupportedRenderers BlockType => SupportedRenderers.Image;
+
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
         string id = block.Id;

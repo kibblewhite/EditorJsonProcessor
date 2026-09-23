@@ -1,7 +1,29 @@
 ﻿namespace EditorJsonToHtmlConverter.Renderers;
 
+/// <summary>
+/// Renders a paragraph of body copy.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The default block for prose. Choose it for ordinary sentences; use <c>header</c> to title a section and
+/// <c>quote</c> to attribute a passage to a speaker or source.
+/// </para>
+/// <para>
+/// <c>text</c> (optional) — the paragraph's content. Inline HTML is preserved, so <c>&lt;b&gt;</c>,
+/// <c>&lt;i&gt;</c>, <c>&lt;a&gt;</c> and <c>&lt;mark&gt;</c> may be used for emphasis and links. When the
+/// field is absent or empty an empty paragraph is still rendered.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// { "id": "b1c2d3e4f5", "type": "paragraph", "data": { "text": "Doors open at &lt;b&gt;7pm&lt;/b&gt;." } }
+/// </code>
+/// </example>
 public sealed class RenderParagraph : IBlockRenderer
 {
+    /// <inheritdoc />
+    public static SupportedRenderers BlockType => SupportedRenderers.Paragraph;
+
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
         string id = block.Id;

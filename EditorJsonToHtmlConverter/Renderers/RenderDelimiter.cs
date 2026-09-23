@@ -1,7 +1,27 @@
 ﻿namespace EditorJsonToHtmlConverter.Renderers;
 
+/// <summary>
+/// Renders a horizontal rule separating one passage from the next.
+/// </summary>
+/// <remarks>
+/// <para>
+/// A delimiter marks a change of subject within a single body. Where the following passage has a name, a
+/// <c>header</c> carries more meaning and should be preferred.
+/// </para>
+/// <para>
+/// The block reads no <c>data</c> fields; an empty <c>data</c> object is correct.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// { "id": "d1a2b3c4d5", "type": "delimiter", "data": { } }
+/// </code>
+/// </example>
 public sealed class RenderDelimiter : IBlockRenderer
 {
+    /// <inheritdoc />
+    public static SupportedRenderers BlockType => SupportedRenderers.Delimiter;
+
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
         string id = block.Id;

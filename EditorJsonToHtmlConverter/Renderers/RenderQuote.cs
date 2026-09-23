@@ -1,7 +1,34 @@
 ﻿namespace EditorJsonToHtmlConverter.Renderers;
 
+/// <summary>
+/// Renders a quotation with an optional attribution line.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Use a quote for words attributable to a person or source — a testimonial, a policy extract. A passage
+/// that simply needs emphasis is a paragraph, not a quote.
+/// </para>
+/// <para>
+/// <c>text</c> (optional) — the quoted passage; inline HTML is preserved. <c>caption</c> (optional) — the
+/// attribution, rendered as a footer beneath the passage and omitted entirely when absent.
+/// <c>alignment</c> (optional) — <c>"left"</c>, <c>"center"</c> or <c>"right"</c>, applied as an alignment
+/// class.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// {
+///   "id": "q1a2b3c4d5",
+///   "type": "quote",
+///   "data": { "text": "The best evening we have had all year.", "caption": "A. Visitor", "alignment": "left" }
+/// }
+/// </code>
+/// </example>
 public sealed class RenderQuote : IBlockRenderer
 {
+    /// <inheritdoc />
+    public static SupportedRenderers BlockType => SupportedRenderers.Quote;
+
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
         string id = block.Id;

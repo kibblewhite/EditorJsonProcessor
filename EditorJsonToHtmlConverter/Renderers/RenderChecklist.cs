@@ -1,7 +1,39 @@
 ﻿namespace EditorJsonToHtmlConverter.Renderers;
 
+/// <summary>
+/// Renders a list of items each shown with a read-only tick box.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Use a checklist where each entry has a completed state worth showing — a preparation list, a set of
+/// prerequisites. Where the entries are simply parallel points, a plain <c>list</c> reads better. The boxes
+/// are always rendered disabled: this is a record of state, not a control the reader can operate.
+/// </para>
+/// <para>
+/// <c>items</c> (required) — the entries; the block renders nothing when the field is missing. Each entry
+/// supplies its text in <c>content</c> (or <c>text</c>) and its state in <c>checked</c>, which defaults to
+/// false when absent.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// {
+///   "id": "c1a2b3c4d5",
+///   "type": "checklist",
+///   "data": {
+///     "items": [
+///       { "content": "Photo identification", "checked": true },
+///       { "content": "Printed ticket", "checked": false }
+///     ]
+///   }
+/// }
+/// </code>
+/// </example>
 public sealed class RenderChecklist : IBlockRenderer
 {
+    /// <inheritdoc />
+    public static SupportedRenderers BlockType => SupportedRenderers.Checklist;
+
     public static void Render(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
         string id = block.Id;
