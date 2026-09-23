@@ -1,0 +1,44 @@
+# Publishes EditorJsonToHtmlConverter to nuget.org using Trusted Publishing: no API key is stored anywhere. The job
+# requests a GitHub OIDC token, nuget.org exchanges it for an API key valid for one hour, and the push uses that.
+#
+# The nuget.org Trusted Publishing policy must match this file:
+#   Repository Owner: kibblewhite   Repository: EditorJsonProcessor   Workflow File: publish.yml   Environment: release
+#
+# Bump <Version> in EditorJsonToHtmlConverter.csproj before running - nuget.org never accepts the same version twice.
+
+name: Publish
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test EditorJsonToHtmlConverter.Tests/EditorJsonToHtmlConverter.Tests.csproj -c Release
+
+      - name: Pack
+        run: dotnet pack EditorJsonToHtmlConverter/EditorJsonToHtmlConverter.csproj -c Release -o artifacts
+
+      # Requested immediately before the push: the key expires after one hour, and each OIDC token can be exchanged once.
+      - name: NuGet login
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # --skip-duplicate turns a re-run with an unchanged version into a no-op instead of a failure.
+      - name: Push
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
