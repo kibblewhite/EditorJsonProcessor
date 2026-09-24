@@ -5,20 +5,24 @@ namespace EditorJsonToHtmlConverter.Renderers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A map block does not describe geography of its own: it names existing venue, space, typology, point-of-interest
-/// and activity records, and the viewer draws them. There is no freehand drawing, no arbitrary marker and no
-/// pin at a bare coordinate — a place must already exist as a record before a map can show it. The centre and
-/// zoom only frame the view; they do not add anything to it.
+/// A map block does not describe geography of its own: it names existing venue, space, typology and activity
+/// records, and the viewer draws them (together with any points of interest the consuming application
+/// resolves from them — those are never named on the block). There is no freehand drawing, no arbitrary marker
+/// and no pin at a bare coordinate — a place must already exist as a record before a map can show it. The
+/// centre and zoom only frame the view; they do not add anything to it.
 /// </para>
 /// <para>
-/// <c>venueGuids</c>, <c>spaceGuids</c>, <c>typologyGuids</c> (all optional) — identifier lists naming what the
-/// map shows. <c>activityGuids</c> (optional) — activity references, each pairing the activity identifier with
-/// the space identifier captured when the block was saved. Entries that are empty or all-zero identifiers are
-/// discarded, so a block naming nothing renders an empty map.
+/// <c>venueGuids</c>, <c>spaceGuids</c>, <c>typologyGuids</c> (all optional) — arrays of identifier strings
+/// naming what the map shows. <c>activityGuids</c> (optional) — an array of activity references, each an
+/// object <c>{ "activityGuid": "…", "spaceGuid": "…" }</c> pairing the activity with the space captured when
+/// the block was saved; a reference missing either identifier is discarded. Entries that are empty or
+/// all-zero identifiers are discarded, so a block naming nothing renders an empty map.
 /// </para>
 /// <para>
 /// <c>center</c> (optional) — the starting centre as <c>lat</c> and <c>lng</c>. <c>zoom</c> (optional) — the
-/// starting zoom level. <c>height</c> (optional) — the map's height in pixels.
+/// starting zoom level. Supply both: without them the map editor opens on a whole-world view and saves that
+/// view as the block's framing. <c>height</c> (optional) — the map's height in pixels; the map editor
+/// defaults it to 400.
 /// </para>
 /// <para>
 /// <b>Two rendering modes.</b> In <i>embedded</i> mode the consuming application resolves every identifier to a

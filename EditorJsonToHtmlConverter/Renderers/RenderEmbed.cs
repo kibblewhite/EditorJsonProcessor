@@ -5,15 +5,28 @@
 /// </summary>
 /// <remarks>
 /// <para>
-/// Use an embed to place hosted media — a video, a track, a map from a public provider — inside a body. The
+/// Use an embed to place hosted media — a video, a social post, a shared board — inside a body. The
 /// renderer emits the provider's own frame; it does not proxy, download or validate the media.
 /// </para>
 /// <para>
 /// <c>service</c> (required) — the provider key, matched case-insensitively, which selects how the frame is
-/// built; an unrecognised service renders no frame. <c>embed</c> (required) — the provider's embed URL.
-/// <c>source</c> (optional) — the original page URL the embed was created from. <c>width</c> and
-/// <c>height</c> (optional, default 0) — the frame size in pixels. <c>caption</c> (optional) — a line
-/// rendered beneath the frame.
+/// built: <c>youtube</c>, <c>vimeo</c>, <c>coub</c>, <c>facebook</c>, <c>instagram</c>, <c>twitter</c>,
+/// <c>twitch-channel</c>, <c>twitch-video</c>, <c>miro</c>, <c>gfycat</c>, <c>imgur</c>, <c>vine</c>,
+/// <c>aparat</c>, <c>codepen</c>, <c>pinterest</c>, <c>github</c> (a gist), <c>yandex-music-album</c>,
+/// <c>yandex-music-track</c> or <c>yandex-music-playlist</c> — the Editor.js embed tool's own keys.
+/// <c>google-maps</c> also renders, from a Google Maps embed URL in <c>source</c>, but the embed tool has no
+/// such service and cannot open the block. Any other key renders no frame, and the embed tool cannot open a
+/// block whose service it has not been configured to enable.
+/// </para>
+/// <para>
+/// <c>source</c> (required) — the original page URL, for example <c>https://www.youtube.com/watch?v=…</c>;
+/// this renderer reads the media's identifier from it and builds the frame itself. <c>embed</c> (required) —
+/// the provider's embed URL, which the editor uses for its preview frame; this renderer does not read it, so
+/// both must name the same media. <c>width</c> and <c>height</c> (required in practice) — the frame size in
+/// pixels. When they are absent <c>youtube</c> falls back to 560 × 315, and <c>pinterest</c>, <c>github</c>
+/// and the Yandex.Music services always use a fixed size; every other service draws a frame with no height,
+/// and several with no width either.
+/// <c>caption</c> (optional) — a line rendered beneath the frame.
 /// </para>
 /// </remarks>
 /// <example>
@@ -113,15 +126,21 @@ public sealed class RenderEmbed : IBlockRenderer
             case "pinterest":
                 RenderPinterestEmbed(render_tree_builder, source);
                 break;
+            // The first key of each pair is the one the Editor.js embed tool writes; the second is kept so that
+            // documents saved under the older key still render.
+            case "github":
             case "gist.github":
                 RenderGitHubGistEmbed(render_tree_builder, source);
                 break;
+            case "yandex-music-album":
             case "music.yandex.album":
                 RenderYandexMusicAlbumEmbed(render_tree_builder, source);
                 break;
+            case "yandex-music-track":
             case "music.yandex.track":
                 RenderYandexMusicTrackEmbed(render_tree_builder, source);
                 break;
+            case "yandex-music-playlist":
             case "music.yandex.playlist":
                 RenderYandexMusicPlaylistEmbed(render_tree_builder, source);
                 break;
@@ -199,7 +218,8 @@ public sealed class RenderEmbed : IBlockRenderer
     // Helper method to render Yandex.Music track embed
     private static void RenderYandexMusicTrackEmbed(CustomRenderTreeBuilder render_tree_builder, string? source)
     {
-        string[] ids = GetYandexMusicIdsFromSource(source);
+        // https://music.yandex.ru/album/{album}/track/{track} → {album}/{track}, as the Editor.js embed tool builds it.
+        string[] ids = GetYandexMusicIdsFromSource(source, "album", "track");
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "frameborder", "0");
@@ -213,7 +233,8 @@ public sealed class RenderEmbed : IBlockRenderer
     // Helper method to render Yandex.Music playlist embed
     private static void RenderYandexMusicPlaylistEmbed(CustomRenderTreeBuilder render_tree_builder, string? source)
     {
-        string[] ids = GetYandexMusicIdsFromSource(source);
+        // https://music.yandex.ru/users/{user}/playlists/{playlist} → {user}/{playlist}, as the Editor.js embed tool builds it.
+        string[] ids = GetYandexMusicIdsFromSource(source, "users", "playlists");
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "iframe");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "frameborder", "0");
@@ -243,34 +264,30 @@ public sealed class RenderEmbed : IBlockRenderer
         return segments.Length >= 2 ? segments[^1].TrimEnd('/') : string.Empty;
     }
 
-    // Helper method to extract Yandex.Music IDs from source URL for tracks and playlists
-    private static string[] GetYandexMusicIdsFromSource(string? source)
+    /// <summary>
+    /// Reads the two identifiers of a Yandex.Music track or playlist URL: the path segment after
+    /// <paramref name="first_marker"/> and the one after <paramref name="second_marker"/> — for a track
+    /// (<c>/album/12345/track/67890</c>) the album and track, for a playlist (<c>/users/name/playlists/12345</c>) the
+    /// user and playlist. Returns an empty array unless both are present.
+    /// </summary>
+    private static string[] GetYandexMusicIdsFromSource(string? source, string first_marker, string second_marker)
     {
-        // Implement logic to extract Yandex.Music track or playlist IDs from the source URL
-        // Example for track: https://music.yandex.ru/album/12345/track/67890
-        // Example for playlist: https://music.yandex.ru/users/username/playlists/12345
-        if (string.IsNullOrWhiteSpace(source))
+        if (string.IsNullOrWhiteSpace(source) || !Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
         {
             return [];
         }
 
-        if (!Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
-        {
-            return [];
-        }
+        string[] segments = [.. uri.Segments.Select(segment => segment.Trim('/')).Where(segment => segment.Length > 0)];
+        string? first_id = SegmentAfter(segments, first_marker);
+        string? second_id = SegmentAfter(segments, second_marker);
 
-        string[] segments = uri.Segments;
-        List<string> ids = [];
+        return first_id is null || second_id is null ? [] : [first_id, second_id];
+    }
 
-        for (int i = 2; i < segments.Length; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(segments[i]))
-            {
-                ids.Add(segments[i].TrimEnd('/'));
-            }
-        }
-
-        return [.. ids];
+    private static string? SegmentAfter(string[] segments, string marker)
+    {
+        int index = Array.FindIndex(segments, segment => string.Equals(segment, marker, StringComparison.OrdinalIgnoreCase));
+        return index >= 0 && index + 1 < segments.Length ? segments[index + 1] : null;
     }
 
     private static void RenderGitHubGistEmbed(CustomRenderTreeBuilder render_tree_builder, string? source)

@@ -203,4 +203,58 @@ public class EjsHtmlRendererTests
 
         Assert.AreEqual("'I' is an invalid start of a value. Path: $ | LineNumber: 0 | BytePositionInLine: 0.", ex.Message);
     }
+
+    private static string Document(params string[] blocks)
+        => $$"""{"time":0,"blocks":[{{string.Join(",", blocks)}}],"version":"0.0.0"}""";
+
+    [TestMethod]
+    public async Task ParseAsync_TableWithHeadingsAndNoRows_RendersNothingAndKeepsTheBlocksAfterIt()
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // An empty table used to throw while lifting out its header row, which silently cut the output off there.
+        string json_value = Document(
+            """{"id":"t1a2b3c4d5","type":"table","data":{"withHeadings":true,"content":[]}}""",
+            """{"id":"p1a2b3c4d5","type":"paragraph","data":{"text":"After the table"}}""");
+
+        string result = await _ejs_html_renderer.ParseAsync(json_value);
+
+        Assert.DoesNotContain("<table", result);
+        Assert.Contains("After the table", result);
+    }
+
+    [TestMethod]
+    [DataRow("""{"text":"No level"}""", "h2")]
+    [DataRow("""{"text":"Too deep","level":9}""", "h2")]
+    [DataRow("""{"text":"Too shallow","level":0}""", "h2")]
+    [DataRow("""{"text":"Level three","level":3}""", "h3")]
+    public async Task ParseAsync_Header_RendersAHeadingElement_FallingBackToLevelTwo(string data, string expected_element)
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // An absent or out-of-range level renders as level 2, as the Editor.js header tool shows it.
+        string result = await _ejs_html_renderer.ParseAsync(Document($$$"""{"id":"h1a2b3c4d5","type":"header","data":{{{data}}}}"""));
+
+        Assert.StartsWith($"<{expected_element} ", result);
+        Assert.EndsWith($"</{expected_element}>", result);
+    }
+
+    [TestMethod]
+    [DataRow("yandex-music-track", "https://music.yandex.ru/album/12345/track/67890", "https://music.yandex.ru/iframe/#track/12345/67890/")]
+    [DataRow("music.yandex.track", "https://music.yandex.ru/album/12345/track/67890", "https://music.yandex.ru/iframe/#track/12345/67890/")]
+    [DataRow("yandex-music-playlist", "https://music.yandex.ru/users/listener/playlists/321", "https://music.yandex.ru/iframe/#playlist/listener/321/show/cover/description/")]
+    [DataRow("music.yandex.playlist", "https://music.yandex.ru/users/listener/playlists/321", "https://music.yandex.ru/iframe/#playlist/listener/321/show/cover/description/")]
+    [DataRow("yandex-music-album", "https://music.yandex.ru/album/12345", "https://music.yandex.ru/iframe/#album/12345/")]
+    [DataRow("github", "https://gist.github.com/someone/0123456789abcdef", "https://gist.github.com/0123456789abcdef.js")]
+    [DataRow("gist.github", "https://gist.github.com/someone/0123456789abcdef", "https://gist.github.com/0123456789abcdef.js")]
+    public async Task ParseAsync_Embed_RendersTheEditorsServiceKeysAndTheOlderOnes(string service, string source, string expected_frame_source)
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // The Editor.js embed tool writes "github" and "yandex-music-*"; the older "gist.github" and "music.yandex.*"
+        // keys still render, and both build the frame the embed tool previews.
+        string result = await _ejs_html_renderer.ParseAsync(Document($$$"""{"id":"e1a2b3c4d5","type":"embed","data":{"service":"{{{service}}}","source":"{{{source}}}"}}"""));
+
+        Assert.Contains(System.Net.WebUtility.HtmlEncode(expected_frame_source), result);
+    }
 }

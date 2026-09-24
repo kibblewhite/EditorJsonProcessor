@@ -11,8 +11,9 @@
 /// <para>
 /// <c>text</c> (optional) — the quoted passage; inline HTML is preserved. <c>caption</c> (optional) — the
 /// attribution, rendered as a footer beneath the passage and omitted entirely when absent.
-/// <c>alignment</c> (optional) — <c>"left"</c>, <c>"center"</c> or <c>"right"</c>, applied as an alignment
-/// class.
+/// <c>alignment</c> (optional) — <c>"left"</c> or <c>"center"</c>, applied as an alignment class. The
+/// Editor.js quote tool offers only these two and replaces any other value, including <c>"right"</c>, with
+/// <c>"left"</c> when the block is next opened.
 /// </para>
 /// </remarks>
 /// <example>

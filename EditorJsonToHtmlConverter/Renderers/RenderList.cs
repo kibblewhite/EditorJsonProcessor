@@ -10,9 +10,12 @@
 /// </para>
 /// <para>
 /// <c>style</c> (optional) — <c>"ordered"</c> renders a numbered list; any other value, or its absence,
-/// renders a bulleted one. <c>items</c> (required) — the entries; the block renders nothing at all when the
-/// field is missing. Each entry supplies its text in <c>content</c> (or <c>text</c>) and may carry its own
-/// <c>items</c> array to nest a sub-list to any depth.
+/// renders a bulleted one; <c>"checklist"</c> is not a list style, use the <c>checklist</c> block.
+/// <c>items</c> (required) — the entries; the block renders nothing at all when the field is missing, and the
+/// Editor.js nested-list tool cannot open it. Each entry supplies its text in <c>content</c> — not
+/// <c>text</c>, which is the <c>checklist</c> block's field and is ignored here — and may carry its own
+/// <c>items</c> array to nest a sub-list to any depth. An entry without <c>content</c> renders as an empty
+/// bullet.
 /// </para>
 /// </remarks>
 /// <example>

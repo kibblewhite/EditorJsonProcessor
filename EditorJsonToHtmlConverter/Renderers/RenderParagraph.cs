@@ -9,9 +9,11 @@
 /// <c>quote</c> to attribute a passage to a speaker or source.
 /// </para>
 /// <para>
-/// <c>text</c> (optional) — the paragraph's content. Inline HTML is preserved, so <c>&lt;b&gt;</c>,
-/// <c>&lt;i&gt;</c>, <c>&lt;a&gt;</c> and <c>&lt;mark&gt;</c> may be used for emphasis and links. When the
-/// field is absent or empty an empty paragraph is still rendered.
+/// <c>text</c> (required in practice) — the paragraph's content. Inline HTML is preserved, so
+/// <c>&lt;b&gt;</c>, <c>&lt;i&gt;</c>, <c>&lt;a&gt;</c> and <c>&lt;mark&gt;</c> may be used for emphasis and
+/// links. When the field is absent or empty this renderer still draws an empty paragraph, but the Editor.js
+/// paragraph tool discards a blank paragraph on its next save, so use a <c>delimiter</c> rather than an empty
+/// paragraph for spacing.
 /// </para>
 /// </remarks>
 /// <example>

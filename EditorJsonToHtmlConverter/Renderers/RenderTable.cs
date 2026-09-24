@@ -10,10 +10,13 @@
 /// two-dimensional, and a table with a single column is a list.
 /// </para>
 /// <para>
-/// <c>content</c> (required) — an array of rows, each an array of cell strings; every row should carry the
-/// same number of cells, and the block renders nothing when the field is missing. Cells preserve inline
-/// HTML. <c>withHeadings</c> (optional, default false) — when true the FIRST row of <c>content</c> is
-/// lifted out and rendered as the header row rather than as data.
+/// <c>content</c> (required) — an array of rows, each an array of cell strings; the block renders nothing
+/// when the field is missing or holds no rows. Every row must carry the same number of cells as the
+/// first: the Editor.js table tool takes its column count from the first row, so a longer row stops the
+/// table opening in the editor and a shorter one is padded with empty cells. A row whose cells are all empty
+/// is dropped by the editor on its next save. Cells preserve inline HTML. <c>withHeadings</c> (optional,
+/// default false) — when true the FIRST row of <c>content</c> is lifted out and rendered as the header row
+/// rather than as data. <c>stretched</c> is saved by the editor and not read by this renderer.
 /// </para>
 /// </remarks>
 /// <example>
@@ -43,7 +46,8 @@ public sealed class RenderTable : IBlockRenderer
         bool withHeadings = block.Data.WithHeadings ?? false;
         List<List<string?>>? content = block.Data.Content;
 
-        if (content == null) { return; }
+        // With no rows there is no header row to lift out, so an empty table renders nothing — as a missing one does.
+        if (content is null || content.Count == 0) { return; }
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "table");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "id", id);

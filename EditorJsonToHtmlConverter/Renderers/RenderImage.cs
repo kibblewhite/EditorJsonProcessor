@@ -10,9 +10,10 @@
 /// </para>
 /// <para>
 /// <c>url</c> (required) — the image source. <c>caption</c> (optional) — used as the image's alternative
-/// text, so it should describe the image rather than decorate it. <c>withBorder</c>, <c>withBackground</c>
-/// and <c>stretched</c> (all optional, default false) — presentation flags controlling the border,
-/// background fill, and whether the image spans the full content width.
+/// text AND shown as a centred line beneath it, so it should describe the image in plain text; markup would
+/// appear literally in the alternative text. <c>withBorder</c> (optional, default false) — draws a thin
+/// border. <c>withBackground</c> (optional, default false) — centres the image horizontally; no background is
+/// drawn. <c>stretched</c> (optional, default false) — spans the full content width.
 /// </para>
 /// </remarks>
 /// <example>

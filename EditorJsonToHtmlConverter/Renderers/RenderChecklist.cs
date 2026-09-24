@@ -11,8 +11,11 @@
 /// </para>
 /// <para>
 /// <c>items</c> (required) — the entries; the block renders nothing when the field is missing. Each entry
-/// supplies its text in <c>content</c> (or <c>text</c>) and its state in <c>checked</c>, which defaults to
-/// false when absent.
+/// supplies its text in <c>text</c> — not <c>content</c>, which is the <c>list</c> block's field and is
+/// ignored here — and its state in <c>checked</c>, which defaults to false when absent. An entry without
+/// <c>text</c> renders as a bare box with no label, and the Editor.js checklist tool discards it on its next
+/// save. Keep the list flat: this renderer draws nested <c>items</c>, but the checklist tool does not support
+/// nesting and drops them on its next save.
 /// </para>
 /// </remarks>
 /// <example>
@@ -22,8 +25,8 @@
 ///   "type": "checklist",
 ///   "data": {
 ///     "items": [
-///       { "content": "Photo identification", "checked": true },
-///       { "content": "Printed ticket", "checked": false }
+///       { "text": "Photo identification", "checked": true },
+///       { "text": "Printed ticket", "checked": false }
 ///     ]
 ///   }
 /// }
