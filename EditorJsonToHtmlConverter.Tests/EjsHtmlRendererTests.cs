@@ -70,6 +70,40 @@ public class EjsHtmlRendererTests
         Assert.AreEqual(string.Empty, result);
     }
 
+    [TestMethod]
+    [DataRow("1", DisplayName = "a renderer's number")]
+    [DataRow(" paragraph ", DisplayName = "a padded name")]
+    [DataRow("paragraph, header", DisplayName = "a list of names")]
+    [DataRow("empty", DisplayName = "the empty block")]
+    public async Task ParseAsync_SkipsBlock_WhenTypeIsNotARendererName(string block_type)
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // Arrange
+        string json_value = $$$"""{"time":0,"blocks":[{"id":"a","type":{{{JsonSerializer.Serialize(block_type)}}},"data":{"text":"Skipped","level":2}}],"version":"0.0.0"}""";
+
+        // Act
+        string result = await _ejs_html_renderer.ParseAsync(json_value);
+
+        // Assert
+        Assert.AreEqual(string.Empty, result);
+    }
+
+    [TestMethod]
+    public async Task ParseAsync_RendersBlock_WhenTypeNameDiffersOnlyInCase()
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // Arrange
+        string json_value = """{"time":0,"blocks":[{"id":"a","type":"PARAGRAPH","data":{"text":"Rendered"}}],"version":"0.0.0"}""";
+
+        // Act
+        string result = await _ejs_html_renderer.ParseAsync(json_value);
+
+        // Assert
+        Assert.Contains("Rendered", result);
+    }
+
     //[TestMethod]
     //[ExpectedException(typeof(JsonException))]
     //public async Task ParseAsync_ThrowsJsonException_ForInvalidJson()

@@ -9,7 +9,7 @@ public class SupportedRenderersConverter : JsonConverter<SupportedRenderers>
         if (reader.TokenType == JsonTokenType.String)
         {
             string? enum_string = reader.GetString();
-            if (Enum.TryParse(enum_string, true, out SupportedRenderers result))
+            if (SupportedRenderersLookup.TryGetBlockType(enum_string, out SupportedRenderers result))
             {
                 return result;
             }

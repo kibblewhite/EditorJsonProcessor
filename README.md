@@ -82,7 +82,7 @@ The input is a complete Editor.js document:
 - Every block needs an `id`, a `type` and a `data` object. Current Editor.js versions write an `id` on every block, but JSON from older versions, or written by hand, may lack one and must be given one before rendering.
 - Field types must match: a header's `level` is a JSON number, so `"level": "2"` is invalid.
 
-**Error handling.** A document that breaks these rules fails to deserialise; the error is logged and rethrown, and nothing is rendered. A block whose `type` has no renderer is skipped silently. A styling map that is not valid JSON is logged and ignored. Blocks render in array order.
+**Error handling.** A document that breaks these rules fails to deserialise; the error is logged and rethrown, and nothing is rendered. A block's `type` is matched to a renderer by name, ignoring case; a block whose `type` has no renderer is skipped silently. To find out beforehand whether a document will render, check it with `IsEditorJsDocument(value, EditorJsDocumentCheck.Renderable)` (see [`EditorJsBlocksExtensions`](#editorjsblocksextensions)). A styling map that is not valid JSON is logged and ignored. Blocks render in array order.
 
 ## Supported blocks
 
@@ -330,15 +330,49 @@ The component builds its content once, from the first non-empty `Value`. After t
 
 ### `EditorJsBlocksExtensions`
 
-Helpers for building documents in code:
+Helpers for building and checking documents in code:
 
 ```csharp
 string empty_document = EditorJsBlocksExtensions.EmptyEditorJsString;  // {"time":0,"blocks":[],"version":"0.0.0"}
 JsonObject empty_object = EditorJsBlocksExtensions.EmptyEditorJsObject;
 
 EditorJsBlocks document = EditorJsBlocks.Empty
-    .AddBlock(new EditorJsBlock { Id = "b1c2d3e4f5", Type = "paragraph", Data = new EditorJsBlockData { Text = "Hello" } });
+    .AddBlock(new EditorJsBlock { Id = EditorJsBlock.NewId(), Type = "paragraph", Data = new EditorJsBlockData { Text = "Hello" } });
+
+// A single-line field (title, synopsis, label): one JSON-escaped "text" block carrying only its text and wrap.
+string title_document = EditorJsBlocksExtensions.TextDocument("Opening <b>night</b>", "title");
+
+// A short body (a note, a message): one JSON-escaped "paragraph" block. Encode plain user text first.
+string notes_document = EditorJsBlocksExtensions.ParagraphDocument(WebUtility.HtmlEncode("Doors open at 7 & close at 11"));
+
+// Is it a document? Checks the envelope unless asked to check further.
+bool is_document = EditorJsBlocksExtensions.IsEditorJsDocument(title_document);                                     // true
+bool will_render = EditorJsBlocksExtensions.IsEditorJsDocument(title_document, EditorJsDocumentCheck.Renderable);  // true
 ```
+
+`IsEditorJsDocument` checks as far as the `EditorJsDocumentCheck` level asks. Each level includes the checks of the
+levels before it:
+
+| Level | Checks | Use it for |
+|---|---|---|
+| `Envelope` (default) | JSON that parses to an object carrying a `blocks` array. The blocks are not looked at. | Sweeping many stored values that were checked when they were written. |
+| `Structure` | Every field has the kind the Editor.js output format gives it: each block is an object with a non-empty string `type` and an object `data`; `time` is a number, `version` a string, a block's `id` a non-empty string and its `tunes` an object, whenever present. Fields Editor.js treats as optional stay optional. | Accepting a document from outside, such as an API request, before storing it. |
+| `Renderable` | What this library needs to render it: `time` (whole milliseconds), `version` and every block `id` present, ids unique, every `type` naming a [supported block](#supported-blocks), and the document deserialising into `EditorJsBlocks`, which checks every `data` field's type. | Curating a single document before it is saved or shown. |
+
+Every level parses the whole value, so none is free. `Structure` walks the already-parsed blocks and allocates nothing
+more than `Envelope`; `Renderable` builds the model. Measured on .NET 10, per call:
+
+| Document | `Envelope` | `Structure` | `Renderable` |
+|---|---|---|---|
+| Title, 1 block (159 B) | 0.4 µs | 0.6 µs | 1.4 µs, 1.5 KB allocated |
+| Body, 20 blocks (2.9 KB) | 4.9 µs | 6.5 µs | 19.6 µs, 21 KB allocated |
+| Long body, 200 blocks (28 KB) | 47 µs | 63 µs | 176 µs, 196 KB allocated |
+
+No level checks what a block's `data` means (a header's `level` being 1 to 6, say) or sanitises its HTML.
+
+`EditorJsBlock.NewId()` mints a block identifier the way Editor.js does: ten hex characters, taken from the random end
+of a v7 GUID so that blocks created in the same instant do not repeat. Built documents carry
+`EditorJsBlocks.EmptyVersion` (`0.0.0`), which Editor.js replaces with its own version the next time the document is saved.
 
 ## Block documentation at runtime
 

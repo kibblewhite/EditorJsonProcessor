@@ -185,7 +185,7 @@ public partial class EjsRenderFragment : ComponentBase
     /// <param name="block">The EditorJS block to render.</param>
     internal static void RenderBlock(CustomRenderTreeBuilder render_tree_builder, EditorJsBlock block)
     {
-        if (Enum.TryParse(block.Type, true, out SupportedRenderers renderer) is false || renderer == SupportedRenderers.Empty)
+        if (SupportedRenderersLookup.TryGetBlockType(block.Type, out SupportedRenderers renderer) is false)
         {
             return;
         }
