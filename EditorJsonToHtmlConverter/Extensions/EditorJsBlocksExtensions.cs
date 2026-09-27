@@ -131,7 +131,17 @@ public static class EditorJsBlocksExtensions
     /// <param name="wrap">The <c>wrap</c> tag the field's editor is configured with (<c>text</c>, <c>custom</c>, <c>title</c> or <c>synopsis</c>).</param>
     /// <returns>The serialised Editor.js document.</returns>
     public static string TextDocument(string text, string wrap)
-        => SingleBlockDocument("text", new EditorJsBlockData { Text = text, Wrap = wrap });
+        => SingleBlockDocument(SupportedRenderers.Text.ToBlockType(), new EditorJsBlockData { Text = text, Wrap = wrap });
+
+    /// <summary>
+    /// Builds the document for a single-line field, as <see cref="TextDocument(string, string)"/> does, taking the
+    /// <c>wrap</c> tag as a <see cref="TextWrapType"/> so the tag is never retyped.
+    /// </summary>
+    /// <param name="text">The line, as inline HTML.</param>
+    /// <param name="wrap">The <c>wrap</c> tag the field's editor is configured with.</param>
+    /// <returns>The serialised Editor.js document.</returns>
+    public static string TextDocument(string text, TextWrapType wrap)
+        => TextDocument(text, wrap.ToWrap());
 
     /// <summary>
     /// Builds the document for a short body — a note, a message: exactly one <c>paragraph</c> block holding the text. The
@@ -141,7 +151,7 @@ public static class EditorJsBlocksExtensions
     /// <param name="text">The paragraph, as inline HTML.</param>
     /// <returns>The serialised Editor.js document.</returns>
     public static string ParagraphDocument(string text)
-        => SingleBlockDocument("paragraph", new EditorJsBlockData { Text = text });
+        => SingleBlockDocument(SupportedRenderers.Paragraph.ToBlockType(), new EditorJsBlockData { Text = text });
 
     private static string SingleBlockDocument(string type, EditorJsBlockData data)
     {

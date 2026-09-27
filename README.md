@@ -102,6 +102,7 @@ Each block's full contract — when to choose it, every `data` field it reads, w
 | `embed` | `service`, `source`, `width`, `height`, `caption` | the provider's `<iframe>` (see [Embed services](#embed-services)) |
 | `text` | `text` | the inline markup itself, with no wrapper element |
 | `map` | see [Map block](#map-block) | `<div data-block-type="map">` |
+| `code` | `code` (plain text, not markup; a block without it is dropped) | `<pre><code>`, HTML-encoded, spacing and line breaks kept |
 
 Note the field names: a **list** item's text is in `content`, while a **checklist** item's text is in `text`. Text-bearing fields keep inline HTML such as `<b>`, `<i>`, `<a href>` and `<mark>`.
 
@@ -123,6 +124,7 @@ A block's `type` is the key its tool is registered under in the Editor.js `tools
 | `embed` | [`@editorjs/embed`](https://github.com/editor-js/embed) | 2.8.0 |
 | `text` | [`editorjs-text`](https://github.com/kibblewhite/editorjs-text) | 1.0.3 |
 | `map` | [`editorjs-leaflet`](https://byteloch-shared.gitlab.io/libraries/editorjs-leaflet/) | 0.0.15 |
+| `code` | [`@editorjs/code`](https://github.com/editor-js/code) | 2.9.4 — not yet load-verified: the contract is taken from the tool's `save()`, which returns `{ code }` from its text area |
 
 Verified with Editor.js 2.31.5. Things to know when choosing tools:
 
@@ -337,10 +339,10 @@ string empty_document = EditorJsBlocksExtensions.EmptyEditorJsString;  // {"time
 JsonObject empty_object = EditorJsBlocksExtensions.EmptyEditorJsObject;
 
 EditorJsBlocks document = EditorJsBlocks.Empty
-    .AddBlock(new EditorJsBlock { Id = EditorJsBlock.NewId(), Type = "paragraph", Data = new EditorJsBlockData { Text = "Hello" } });
+    .AddBlock(new EditorJsBlock { Id = EditorJsBlock.NewId(), Type = SupportedRenderers.Paragraph.ToBlockType(), Data = new EditorJsBlockData { Text = "Hello" } });
 
 // A single-line field (title, synopsis, label): one JSON-escaped "text" block carrying only its text and wrap.
-string title_document = EditorJsBlocksExtensions.TextDocument("Opening <b>night</b>", "title");
+string title_document = EditorJsBlocksExtensions.TextDocument("Opening <b>night</b>", TextWrapType.Title);
 
 // A short body (a note, a message): one JSON-escaped "paragraph" block. Encode plain user text first.
 string notes_document = EditorJsBlocksExtensions.ParagraphDocument(WebUtility.HtmlEncode("Doors open at 7 & close at 11"));
@@ -388,6 +390,19 @@ The match is by name alone, ignoring case. A number (`"1"`), padding (`" paragra
 (`"paragraph, header"`) and `empty` never resolve, although `Enum.TryParse` would accept the first three — so use this
 rather than `Enum.TryParse` on a block type.
 
+The reverse, `ToBlockType()`, gives the exact `type` Editor.js writes — the member's name in lower case — for code that
+writes a block, or matches one where case matters (a SQL JSON path, a `data-` attribute). Take the string from here rather
+than retyping it:
+
+```csharp
+string map_type = SupportedRenderers.Map.ToBlockType();    // "map"
+string none = SupportedRenderers.Empty.ToBlockType();      // "" - Empty is not a block type
+```
+
+`TextWrapType` and `TextWrapTypeLookup` do the same for a `text` block's `wrap` tag (`Text`, `Custom`, `Title`,
+`Synopsis`): `TextWrapType.Title.ToWrap()` is `"title"`, and `TextWrapTypeLookup.TryGetWrap(value, out TextWrapType wrap)`
+reads one back under the same name-only rule.
+
 ## Block documentation at runtime
 
 Every renderer carries XML documentation for its block — a one-sentence summary, when to choose the block, every `data` field it reads and what happens when one is absent, and a complete example block. Each renderer also declares the block type it serves through the static `IBlockRenderer.BlockType` property, so the supported blocks can be discovered by reflecting over `IBlockRenderer` implementations rather than kept in a separate list.
@@ -427,7 +442,7 @@ The server hosts the WebAssembly client, proxies tile requests to avoid cross-or
 
 ## Adding a block renderer
 
-1. Add a member to `SupportedRenderers`. A block's `type` string is matched to it by name, case-insensitively (`SupportedRenderersLookup`).
+1. Append a member to `SupportedRenderers`, named after the key its Editor.js tool is registered under and marked `[StringValue(nameof(Member))]`. Its `type` is the name in lower case (`ToBlockType()`), and a document's `type` is matched to it case-insensitively (`SupportedRenderersLookup`).
 2. Add a `public sealed class Render{Type} : IBlockRenderer` under `EditorJsonToHtmlConverter/Renderers/`, declaring `BlockType` and implementing `Render`.
 3. Document the class to the contract on `IBlockRenderer`: a one-sentence `<summary>`; `<remarks>` covering when to choose the block and every `data` field it reads; and an `<example>` holding one complete, valid block, including its `id`. Use `<para>` and `<c>` for structure. Check the example against the Editor.js tool that authors the block, so that it survives that tool's `save()`.
 4. Add the dispatch case in `EjsRenderFragment`.

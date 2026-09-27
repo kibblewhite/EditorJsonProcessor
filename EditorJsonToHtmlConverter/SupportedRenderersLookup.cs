@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Reflection;
 
 namespace EditorJsonToHtmlConverter;
 
@@ -17,10 +18,19 @@ namespace EditorJsonToHtmlConverter;
 /// </remarks>
 public static class SupportedRenderersLookup
 {
-    // Empty is the absence of a block type, not a block, so it is left out and never resolves.
-    private static readonly FrozenDictionary<string, SupportedRenderers> _block_types = Enum.GetValues<SupportedRenderers>()
+    // Each member's Editor.js block type: its StringValue (the member's name) in lower case, read once - the same rule
+    // SupportedRenderersConverter writes with. Empty is the absence of a block type, not a block, so it is left out and
+    // neither resolves nor has a block type.
+    private static readonly FrozenDictionary<SupportedRenderers, string> _block_type_by_renderer = Enum.GetValues<SupportedRenderers>()
         .Where(renderer => renderer != SupportedRenderers.Empty)
-        .ToFrozenDictionary(renderer => renderer.ToString(), StringComparer.OrdinalIgnoreCase);
+        .ToFrozenDictionary(renderer => renderer, renderer => typeof(SupportedRenderers)
+            .GetField(renderer.ToString())!
+            .GetCustomAttribute<StringValueAttribute>()!
+            .Value
+            .ToLowerInvariant());
+
+    private static readonly FrozenDictionary<string, SupportedRenderers> _block_types = _block_type_by_renderer
+        .ToFrozenDictionary(pair => pair.Value, pair => pair.Key, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Resolves a block type, ignoring case, to the block that renders it.
@@ -33,4 +43,15 @@ public static class SupportedRenderersLookup
         renderer = SupportedRenderers.Empty;
         return block_type is not null && _block_types.TryGetValue(block_type, out renderer) is true;
     }
+
+    /// <summary>
+    /// The exact <c>type</c> Editor.js writes for <paramref name="renderer"/>'s block - <c>"map"</c> for
+    /// <see cref="SupportedRenderers.Map"/>. The reverse of <see cref="TryGetBlockType(string?, out SupportedRenderers)"/>,
+    /// for a consumer that writes a block or must match its type exactly; <see cref="string.Empty"/> for
+    /// <see cref="SupportedRenderers.Empty"/>, which is not a block type.
+    /// </summary>
+    /// <param name="renderer">The block type.</param>
+    /// <returns>The block's <c>type</c> string, as Editor.js writes it.</returns>
+    public static string ToBlockType(this SupportedRenderers renderer)
+        => _block_type_by_renderer.TryGetValue(renderer, out string? block_type) is true ? block_type : string.Empty;
 }

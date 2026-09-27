@@ -74,7 +74,7 @@ public sealed class RenderMap : IBlockRenderer
 
         render_tree_builder.Builder.OpenElement(render_tree_builder.SequenceCounter, "div");
         render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "id", id);
-        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-block-type", "map");
+        render_tree_builder.Builder.AddAttribute(render_tree_builder.SequenceCounter, "data-block-type", BlockType.ToBlockType());
 
         // CSS styling lookup
         EditorJsStylingMap? css = render_tree_builder.StylingMap

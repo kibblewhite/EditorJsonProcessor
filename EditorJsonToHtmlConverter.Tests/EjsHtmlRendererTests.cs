@@ -238,6 +238,58 @@ public class EjsHtmlRendererTests
         Assert.AreEqual("'I' is an invalid start of a value. Path: $ | LineNumber: 0 | BytePositionInLine: 0.", ex.Message);
     }
 
+    [TestMethod]
+    public async Task ParseAsync_CodeBlock_IsPreformattedAndEncoded()
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // Arrange - markup in a snippet is text to show, never HTML to run
+        string json_value = Document("""{"id":"c1a2b3c4d5","type":"code","data":{"code":"<script>alert(1)</script>\n  indented & kept"}}""");
+
+        // Act
+        string result = await _ejs_html_renderer.ParseAsync(json_value);
+
+        // Assert - encoded, so no tag survives, yet it decodes back to exactly what was typed, line break and spacing included
+        Assert.StartsWith("""<pre id="c1a2b3c4d5"><code>""", result);
+        Assert.EndsWith("</code></pre>", result);
+        Assert.DoesNotContain("<script>", result);
+        string content = result["""<pre id="c1a2b3c4d5"><code>""".Length..^"</code></pre>".Length];
+        Assert.AreEqual("<script>alert(1)</script>\n  indented & kept", System.Net.WebUtility.HtmlDecode(content));
+    }
+
+    [TestMethod]
+    public async Task ParseAsync_CodeBlock_TakesItsStyleFromTheStylingMap()
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // Arrange
+        string json_value = Document("""{"id":"c1a2b3c4d5","type":"code","data":{"code":"x"}}""");
+        string styling_map = """[{"type":"code","style":"code-style"}]""";
+
+        // Act
+        string result = await _ejs_html_renderer.ParseAsync(json_value, strip_html: false, styling_map: styling_map);
+
+        // Assert
+        Assert.Contains("""<pre id="c1a2b3c4d5" class="code-style"><code>x</code></pre>""", result);
+    }
+
+    [TestMethod]
+    [DataRow("""{}""", DisplayName = "code is absent")]
+    [DataRow("""{"code":""}""", DisplayName = "code is empty")]
+    public async Task ParseAsync_CodeBlock_IsDropped_WhenItHasNoCode(string data)
+    {
+        ArgumentNullException.ThrowIfNull(_ejs_html_renderer, nameof(_ejs_html_renderer));
+
+        // Arrange
+        string json_value = Document($$"""{"id":"c1a2b3c4d5","type":"code","data":{{data}}}""");
+
+        // Act
+        string result = await _ejs_html_renderer.ParseAsync(json_value);
+
+        // Assert
+        Assert.AreEqual(string.Empty, result);
+    }
+
     private static string Document(params string[] blocks)
         => $$"""{"time":0,"blocks":[{{string.Join(",", blocks)}}],"version":"0.0.0"}""";
 

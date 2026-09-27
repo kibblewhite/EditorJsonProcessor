@@ -11,6 +11,7 @@ public sealed class SupportedRenderersLookupTests
     [DataRow("paragraph", SupportedRenderers.Paragraph)]
     [DataRow("HEADER", SupportedRenderers.Header)]
     [DataRow("Map", SupportedRenderers.Map)]
+    [DataRow("code", SupportedRenderers.Code)]
     public void A_renderer_name_resolves_in_any_case(string block_type, SupportedRenderers expected_renderer)
     {
         Assert.IsTrue(SupportedRenderersLookup.TryGetBlockType(block_type, out SupportedRenderers renderer));
@@ -30,4 +31,30 @@ public sealed class SupportedRenderersLookupTests
         Assert.IsFalse(SupportedRenderersLookup.TryGetBlockType(block_type, out SupportedRenderers renderer));
         Assert.AreEqual(SupportedRenderers.Empty, renderer);
     }
+
+    [TestMethod]
+    [DataRow(SupportedRenderers.Paragraph, "paragraph")]
+    [DataRow(SupportedRenderers.Checklist, "checklist")]
+    [DataRow(SupportedRenderers.Text, "text")]
+    [DataRow(SupportedRenderers.Map, "map")]
+    [DataRow(SupportedRenderers.Code, "code")]
+    public void A_renderer_writes_the_type_its_editor_js_tool_is_registered_under(SupportedRenderers renderer, string expected_block_type)
+        => Assert.AreEqual(expected_block_type, renderer.ToBlockType());
+
+    [TestMethod]
+    public void Every_renderer_block_type_is_lower_case_and_resolves_back_to_its_renderer()
+    {
+        foreach (SupportedRenderers renderer in Enum.GetValues<SupportedRenderers>().Where(renderer => renderer != SupportedRenderers.Empty))
+        {
+            string block_type = renderer.ToBlockType();
+
+            Assert.AreEqual(renderer.ToString().ToLowerInvariant(), block_type);
+            Assert.IsTrue(SupportedRenderersLookup.TryGetBlockType(block_type, out SupportedRenderers resolved));
+            Assert.AreEqual(renderer, resolved);
+        }
+    }
+
+    [TestMethod]
+    public void The_empty_block_has_no_block_type()
+        => Assert.AreEqual(string.Empty, SupportedRenderers.Empty.ToBlockType());
 }

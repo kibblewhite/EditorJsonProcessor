@@ -148,6 +148,21 @@ public sealed class EditorJsBlocksExtensionsTests
     }
 
     [TestMethod]
+    [DataRow(TextWrapType.Text, "text")]
+    [DataRow(TextWrapType.Custom, "custom")]
+    [DataRow(TextWrapType.Title, "title")]
+    [DataRow(TextWrapType.Synopsis, "synopsis")]
+    public void A_text_document_built_from_a_wrap_type_carries_that_wrap_tag(TextWrapType wrap, string expected_wrap)
+    {
+        EditorJsBlocks? blocks = JsonSerializer.Deserialize<EditorJsBlocks>(EditorJsBlocksExtensions.TextDocument("A line", wrap));
+
+        Assert.IsNotNull(blocks);
+        EditorJsBlock block = blocks.Blocks.Single();
+        Assert.AreEqual("text", block.Type);
+        Assert.AreEqual(expected_wrap, block.Data.Wrap);
+    }
+
+    [TestMethod]
     public void A_paragraph_document_holds_one_escaped_paragraph_block_with_only_its_text()
     {
         string text = """Bring a "plus one" &amp; <i>dancing shoes</i>""";

@@ -142,6 +142,14 @@ public sealed class EditorJsBlockData : IEditorJsEntity<EditorJsBlockData>
     [JsonPropertyName("wrap")]
     public string? Wrap { get; set; }
 
+    // Code block properties
+
+    /// <summary>
+    /// Gets or sets the source of a code block - plain text as typed, never markup.
+    /// </summary>
+    [JsonPropertyName("code")]
+    public string? Code { get; set; }
+
     // Map block properties
 
     /// <summary>

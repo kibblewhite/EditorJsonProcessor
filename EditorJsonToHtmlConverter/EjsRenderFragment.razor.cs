@@ -228,6 +228,9 @@ public partial class EjsRenderFragment : ComponentBase
             case SupportedRenderers.Map:
                 RenderMap.Render(render_tree_builder, block);
                 break;
+            case SupportedRenderers.Code:
+                RenderCode.Render(render_tree_builder, block);
+                break;
         }
     }
 }
