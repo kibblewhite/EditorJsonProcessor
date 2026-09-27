@@ -374,6 +374,20 @@ No level checks what a block's `data` means (a header's `level` being 1 to 6, sa
 of a v7 GUID so that blocks created in the same instant do not repeat. Built documents carry
 `EditorJsBlocks.EmptyVersion` (`0.0.0`), which Editor.js replaces with its own version the next time the document is saved.
 
+### `SupportedRenderersLookup`
+
+Resolves a block's `type` to the `SupportedRenderers` block that draws it — the same rule the renderer uses, so code that
+inspects a document before rendering it decides exactly as the renderer will:
+
+```csharp
+bool renders = SupportedRenderersLookup.TryGetBlockType("Paragraph", out SupportedRenderers renderer);  // true, Paragraph
+bool number = SupportedRenderersLookup.TryGetBlockType("1", out _);                                    // false
+```
+
+The match is by name alone, ignoring case. A number (`"1"`), padding (`" paragraph "`), a comma list
+(`"paragraph, header"`) and `empty` never resolve, although `Enum.TryParse` would accept the first three — so use this
+rather than `Enum.TryParse` on a block type.
+
 ## Block documentation at runtime
 
 Every renderer carries XML documentation for its block — a one-sentence summary, when to choose the block, every `data` field it reads and what happens when one is absent, and a complete example block. Each renderer also declares the block type it serves through the static `IBlockRenderer.BlockType` property, so the supported blocks can be discovered by reflecting over `IBlockRenderer` implementations rather than kept in a separate list.
@@ -413,7 +427,7 @@ The server hosts the WebAssembly client, proxies tile requests to avoid cross-or
 
 ## Adding a block renderer
 
-1. Add a member to `SupportedRenderers`. A block's `type` string is matched to it case-insensitively.
+1. Add a member to `SupportedRenderers`. A block's `type` string is matched to it by name, case-insensitively (`SupportedRenderersLookup`).
 2. Add a `public sealed class Render{Type} : IBlockRenderer` under `EditorJsonToHtmlConverter/Renderers/`, declaring `BlockType` and implementing `Render`.
 3. Document the class to the contract on `IBlockRenderer`: a one-sentence `<summary>`; `<remarks>` covering when to choose the block and every `data` field it reads; and an `<example>` holding one complete, valid block, including its `id`. Use `<para>` and `<c>` for structure. Check the example against the Editor.js tool that authors the block, so that it survives that tool's `save()`.
 4. Add the dispatch case in `EjsRenderFragment`.

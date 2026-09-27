@@ -3,7 +3,11 @@ using System.Collections.Frozen;
 namespace EditorJsonToHtmlConverter;
 
 /// <summary>
-/// Resolves a block's <c>type</c> to the <see cref="SupportedRenderers"/> block that draws it, by name alone.
+/// Resolves a block's <c>type</c> to the <see cref="SupportedRenderers"/> block that draws it, by name alone — the one
+/// rule the renderer, <see cref="Models.SupportedRenderersConverter"/> and
+/// <see cref="Extensions.EditorJsBlocksExtensions.IsEditorJsDocument(string, EditorJsDocumentCheck)"/> use. Public so a
+/// consumer that inspects a document's block types before rendering it (to refuse a type, or to treat one differently)
+/// decides exactly as the renderer will.
 /// </summary>
 /// <remarks>
 /// <see cref="Enum.TryParse{TEnum}(string?, bool, out TEnum)"/> is not used, because it accepts more than names: a
@@ -11,7 +15,7 @@ namespace EditorJsonToHtmlConverter;
 /// whose values it ORs together (<c>"paragraph, header"</c> is <see cref="SupportedRenderers.List"/>). None of those is a
 /// block type Editor.js writes.
 /// </remarks>
-internal static class SupportedRenderersLookup
+public static class SupportedRenderersLookup
 {
     // Empty is the absence of a block type, not a block, so it is left out and never resolves.
     private static readonly FrozenDictionary<string, SupportedRenderers> _block_types = Enum.GetValues<SupportedRenderers>()
