@@ -355,6 +355,14 @@ bool will_render = EditorJsBlocksExtensions.IsEditorJsDocument(title_document, E
 string authored_title = EditorJsBlocksExtensions.TextDocument("Opening night", TextWrapType.Title, is_authored_content: true);
 bool title_is_template = EditorJsBlocksExtensions.IsEmptyTemplate(title_document);            // true
 bool authored_is_template = EditorJsBlocksExtensions.IsEmptyTemplate(authored_title);         // false
+
+// Store a field so it always says whether anyone authored it: nothing in it (an editor someone cleared still carries the
+// editor's own version) becomes the empty document, and content with no version carries the template version.
+string stored = EditorJsBlocksExtensions.TemplateWhenUnauthored(editor_output);               // string or JsonObject
+bool is_empty = EditorJsBlocksExtensions.HasNoBlocks(editor_output);                           // string or JsonObject
+
+// The document's text, block by block: "Opening <b>night</b>".
+string text = EditorJsBlocksExtensions.PlainText(title_document);
 ```
 
 `IsEditorJsDocument` checks as far as the `EditorJsDocumentCheck` level asks. Each level includes the checks of the
@@ -382,9 +390,15 @@ of a v7 GUID so that blocks created in the same instant do not repeat. Built doc
 `EditorJsBlocks.EmptyVersion` (`0.0.0`), which Editor.js replaces with its own version the next time the document is saved.
 
 That version also marks a template: a document with no content, or with placeholder content no one has authored yet, and
-`IsEmptyTemplate` recognises it (a blank value counts too). Pass `is_authored_content: true` to `TextDocument` or
+`IsEmptyTemplate` recognises it. A blank value counts too, and so does a document whose `version` is missing (absent,
+null, not a string or blank), since nothing in it was stamped as authored. Pass `is_authored_content: true` to `TextDocument` or
 `ParagraphDocument` when the text is real content; the document then carries `EditorJsBlocks.ContentVersion` (`1.0.0`),
 a fixed value that follows no Editor.js release, and is not a template.
+
+An editor stamps its own release on everything it saves, including a field someone emptied, so a stored value can hold
+no blocks yet look authored. `TemplateWhenUnauthored` gives the value to store: one with no blocks (`HasNoBlocks`)
+becomes the empty document, content with no version gets `EditorJsBlocks.EmptyVersion`, and anything else is returned
+unchanged.
 
 ### `SupportedRenderersLookup`
 

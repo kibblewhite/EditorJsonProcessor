@@ -1,6 +1,7 @@
 using EditorJsonToHtmlConverter.Extensions;
 using EditorJsonToHtmlConverter.Models;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace EditorJsonToHtmlConverter.Tests;
 
@@ -201,14 +202,17 @@ public sealed class EditorJsBlocksExtensionsTests
     [DataRow("   ", DisplayName = "whitespace")]
     [DataRow("""{"time":0,"blocks":[],"version":"0.0.0"}""", DisplayName = "the empty document")]
     [DataRow("""{"time":5,"blocks":[{"id":"a","type":"paragraph","data":{"text":"Draft: Gala"}}],"version":"0.0.0"}""", DisplayName = "placeholder content")]
-    public void A_blank_value_or_the_template_version_is_a_template(string? value)
+    [DataRow("""{"time":1,"blocks":[]}""", DisplayName = "version is missing")]
+    [DataRow("""{"time":1,"blocks":[{"id":"a","type":"paragraph","data":{"text":"x"}}]}""", DisplayName = "content with no version")]
+    [DataRow("""{"time":1,"blocks":[],"version":null}""", DisplayName = "version is null")]
+    [DataRow("""{"time":1,"blocks":[],"version":""}""", DisplayName = "version is blank")]
+    [DataRow("""{"time":1,"blocks":[],"version":0}""", DisplayName = "version is not a string")]
+    public void A_blank_value_a_missing_version_or_the_template_version_is_a_template(string? value)
         => Assert.IsTrue(EditorJsBlocksExtensions.IsEmptyTemplate(value));
 
     [TestMethod]
     [DataRow("""{"time":1,"blocks":[{"id":"a","type":"paragraph","data":{"text":"x"}}],"version":"2.31.0"}""", DisplayName = "saved by the editor")]
     [DataRow("""{"time":1,"blocks":[{"id":"a","type":"paragraph","data":{"text":"x"}}],"version":"1.0.0"}""", DisplayName = "built as authored content")]
-    [DataRow("""{"time":1,"blocks":[]}""", DisplayName = "version is missing")]
-    [DataRow("""{"time":1,"blocks":[],"version":0}""", DisplayName = "version is not a string")]
     [DataRow("""["not","an","object"]""", DisplayName = "an array")]
     [DataRow("Plain text", DisplayName = "not JSON")]
     public void Anything_else_is_not_a_template(string value)
@@ -222,5 +226,71 @@ public sealed class EditorJsBlocksExtensionsTests
         Assert.IsTrue(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.ParagraphDocument("Draft: Gala")));
         Assert.IsFalse(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.TextDocument("Gala", TextWrapType.Title, is_authored_content: true)));
         Assert.IsFalse(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.ParagraphDocument("Gala", is_authored_content: true)));
+    }
+
+    [TestMethod]
+    [DataRow(null, true, DisplayName = "null")]
+    [DataRow("  ", true, DisplayName = "whitespace")]
+    [DataRow("""{"time":1,"blocks":[],"version":"2.31.5"}""", true, DisplayName = "an editor someone cleared")]
+    [DataRow("""{"time":1,"version":"2.31.5"}""", true, DisplayName = "no blocks property")]
+    [DataRow("""{"time":1,"blocks":null,"version":"2.31.5"}""", true, DisplayName = "null blocks")]
+    [DataRow("""{"time":1,"blocks":[{"id":"a","type":"paragraph","data":{"text":"x"}}],"version":"2.31.5"}""", false, DisplayName = "a block")]
+    [DataRow("Plain text", false, DisplayName = "not JSON")]
+    [DataRow("""["not","an","object"]""", false, DisplayName = "an array")]
+    public void A_value_has_no_blocks_when_nothing_in_it_would_render(string? value, bool expected)
+    {
+        Assert.AreEqual(expected, EditorJsBlocksExtensions.HasNoBlocks(value));
+        if (value is not null && value.TrimStart().StartsWith('{') is true)
+        {
+            Assert.AreEqual(expected, EditorJsBlocksExtensions.HasNoBlocks(JsonNode.Parse(value)!.AsObject()));
+        }
+    }
+
+    [TestMethod]
+    [DataRow("""{"time":1,"blocks":[],"version":"2.31.5"}""", DisplayName = "an editor someone cleared")]
+    [DataRow("""{"time":1,"blocks":[]}""", DisplayName = "no blocks and no version")]
+    [DataRow("", DisplayName = "blank")]
+    public void A_value_with_nothing_in_it_is_stored_as_the_empty_document(string value)
+    {
+        Assert.AreEqual(EditorJsBlocksExtensions.EmptyEditorJsString, EditorJsBlocksExtensions.TemplateWhenUnauthored(value));
+        Assert.IsTrue(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.TemplateWhenUnauthored(value)));
+    }
+
+    [TestMethod]
+    public void Content_without_a_version_keeps_its_blocks_and_carries_the_template_version()
+    {
+        const string versionless = """{"time":1,"blocks":[{"id":"a","type":"text","data":{"text":"Gala"}}]}""";
+
+        string stored = EditorJsBlocksExtensions.TemplateWhenUnauthored(versionless);
+        JsonObject stored_object = EditorJsBlocksExtensions.TemplateWhenUnauthored(JsonNode.Parse(versionless)!.AsObject());
+
+        Assert.IsTrue(EditorJsBlocksExtensions.IsEmptyTemplate(stored));
+        Assert.Contains("Gala", stored);
+        Assert.AreEqual(EditorJsBlocks.EmptyVersion, stored_object["version"]!.GetValue<string>());
+        Assert.HasCount(1, stored_object["blocks"]!.AsArray());
+    }
+
+    [TestMethod]
+    public void Authored_content_a_placeholder_and_a_non_document_are_stored_as_they_are()
+    {
+        string authored = EditorJsBlocksExtensions.TextDocument("Gala", TextWrapType.Title, is_authored_content: true);
+        string placeholder = EditorJsBlocksExtensions.TextDocument("Draft: Gala", TextWrapType.Title);
+        JsonObject saved = JsonNode.Parse("""{"time":1,"blocks":[{"id":"a","type":"text","data":{"text":"Gala"}}],"version":"2.31.5"}""")!.AsObject();
+
+        Assert.AreEqual(authored, EditorJsBlocksExtensions.TemplateWhenUnauthored(authored));
+        Assert.AreEqual(placeholder, EditorJsBlocksExtensions.TemplateWhenUnauthored(placeholder));
+        Assert.AreEqual("Plain text", EditorJsBlocksExtensions.TemplateWhenUnauthored("Plain text"));
+        Assert.AreSame(saved, EditorJsBlocksExtensions.TemplateWhenUnauthored(saved));
+    }
+
+    [TestMethod]
+    public void A_document_reads_as_its_blocks_text_in_order()
+    {
+        const string document = """{"time":1,"blocks":[{"id":"a","type":"header","data":{"text":"Doors","level":2}},{"id":"b","type":"delimiter","data":{}},{"id":"c","type":"paragraph","data":{"text":"open at <b>7</b>"}}],"version":"2.31.5"}""";
+
+        Assert.AreEqual("Doors open at <b>7</b>", EditorJsBlocksExtensions.PlainText(document));
+        Assert.AreEqual(string.Empty, EditorJsBlocksExtensions.PlainText(EditorJsBlocksExtensions.EmptyEditorJsString));
+        Assert.AreEqual(string.Empty, EditorJsBlocksExtensions.PlainText("  "));
+        Assert.AreEqual("Plain text", EditorJsBlocksExtensions.PlainText("Plain text"));
     }
 }

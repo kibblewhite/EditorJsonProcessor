@@ -59,13 +59,14 @@ public static class EditorJsBlocksExtensions
     }
 
     /// <summary>
-    /// Whether a content field's value is a template: an Editor.js document whose <c>version</c> is
-    /// <see cref="EditorJsBlocks.EmptyVersion"/>, whether it holds no blocks or only placeholder content no one has
-    /// authored. Such a field counts as not authored. A blank value counts as a template; a value that is not a JSON
-    /// object, or has no string <c>version</c>, does not, as <see cref="IsEditorJsDocument"/> refuses it.
+    /// Whether a content field's value is a template, which no one has authored: a blank value, or an Editor.js document
+    /// whose <c>version</c> is <see cref="EditorJsBlocks.EmptyVersion"/> or is missing (absent, null, not a string, or
+    /// blank), whether it holds no blocks or only placeholder content. Such a field counts as not authored, and an asset
+    /// holding one is never published. A value that is not a JSON object is not a template: <see cref="IsEditorJsDocument"/>
+    /// refuses it.
     /// </summary>
     /// <param name="value">A content field's stored value.</param>
-    /// <returns><see langword="true"/> when the value is blank or carries <see cref="EditorJsBlocks.EmptyVersion"/>.</returns>
+    /// <returns><see langword="true"/> when the value is blank, or its version is missing or <see cref="EditorJsBlocks.EmptyVersion"/>.</returns>
     public static bool IsEmptyTemplate(string? value)
     {
         if (string.IsNullOrWhiteSpace(value) is true)
@@ -77,16 +78,164 @@ public static class EditorJsBlocksExtensions
         {
             using JsonDocument json_document = JsonDocument.Parse(value);
             JsonElement root_element = json_document.RootElement;
-            return root_element.ValueKind == JsonValueKind.Object
-                && root_element.TryGetProperty("version", out JsonElement version_element) is true
+            if (root_element.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            // A document that says nothing about its version was never stamped as authored, so it counts as the template.
+            bool has_version = root_element.TryGetProperty("version", out JsonElement version_element) is true
                 && version_element.ValueKind == JsonValueKind.String
-                && version_element.ValueEquals(EditorJsBlocks.EmptyVersion) is true;
+                && string.IsNullOrWhiteSpace(version_element.GetString()) is false;
+            return has_version is false || version_element.ValueEquals(EditorJsBlocks.EmptyVersion) is true;
         }
         catch (JsonException)
         {
             return false;
         }
     }
+
+    /// <summary>
+    /// Whether a value holds no blocks: a blank value, or an Editor.js document whose <c>blocks</c> is missing, null or
+    /// empty. A value that is not a JSON object is not a document and does not count.
+    /// </summary>
+    /// <param name="value">A content field's value.</param>
+    /// <returns><see langword="true"/> when nothing in the value would render.</returns>
+    public static bool HasNoBlocks(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) is true)
+        {
+            return true;
+        }
+
+        try
+        {
+            using JsonDocument json_document = JsonDocument.Parse(value);
+            JsonElement root_element = json_document.RootElement;
+            return root_element.ValueKind == JsonValueKind.Object
+                && (root_element.TryGetProperty("blocks", out JsonElement blocks_element) is false
+                    || blocks_element.ValueKind != JsonValueKind.Array
+                    || blocks_element.GetArrayLength() == 0);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Whether an editor's document holds no blocks (its <c>blocks</c> is missing, null or empty).</summary>
+    /// <param name="document">The editor's document.</param>
+    /// <returns><see langword="true"/> when nothing in the document would render.</returns>
+    public static bool HasNoBlocks(JsonObject document)
+        => document["blocks"] is not JsonArray blocks || blocks.Count == 0;
+
+    /// <summary>
+    /// A content field's value as it should be stored, so it always says whether anyone has authored it: a value with no
+    /// blocks (<see cref="HasNoBlocks(string?)"/>) becomes the empty document, whatever version it was stamped with (an
+    /// editor stamps its own release on everything it saves, including a field someone cleared), and a document with
+    /// blocks but no version (absent, null or blank) carries <see cref="EditorJsBlocks.EmptyVersion"/>. Either way the
+    /// result is a template (<see cref="IsEmptyTemplate"/>). A document with blocks and a version is returned unchanged,
+    /// and so is a value that is not a JSON object, which <see cref="IsEditorJsDocument"/> refuses.
+    /// </summary>
+    /// <param name="value">A content field's value.</param>
+    /// <returns>The value to store.</returns>
+    public static string TemplateWhenUnauthored(string? value)
+    {
+        if (HasNoBlocks(value) is true)
+        {
+            return EmptyEditorJsString;
+        }
+
+        try
+        {
+            if (JsonNode.Parse(value!) is not JsonObject document || HasVersion(document) is true)
+            {
+                return value!;
+            }
+
+            document["version"] = EditorJsBlocks.EmptyVersion;
+            return document.ToJsonString();
+        }
+        catch (JsonException)
+        {
+            return value!;
+        }
+    }
+
+    /// <summary>
+    /// An editor's document as it should be stored: the <see cref="JsonObject"/> form of
+    /// <see cref="TemplateWhenUnauthored(string?)"/>. A document with blocks and a version is returned as the same instance;
+    /// otherwise a new instance is returned and <paramref name="document"/> is left as it was.
+    /// </summary>
+    /// <param name="document">The editor's document.</param>
+    /// <returns>The document to store.</returns>
+    public static JsonObject TemplateWhenUnauthored(JsonObject document)
+    {
+        if (HasNoBlocks(document) is true)
+        {
+            return EmptyEditorJsObject;
+        }
+
+        if (HasVersion(document) is true)
+        {
+            return document;
+        }
+
+        JsonObject versioned = document.DeepClone().AsObject();
+        versioned["version"] = EditorJsBlocks.EmptyVersion;
+        return versioned;
+    }
+
+    /// <summary>
+    /// The plain text of a document: every block's <c>data.text</c>, in block order, joined by a space (inline markup is
+    /// kept as written). A blank value gives an empty string; a value that is not a document with a <c>blocks</c> array is
+    /// returned unchanged, so a caller holding a value that may still be plain text gets that text back.
+    /// </summary>
+    /// <param name="value">A content field's value.</param>
+    /// <returns>The document's text.</returns>
+    public static string PlainText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) is true)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            using JsonDocument json_document = JsonDocument.Parse(value);
+            JsonElement root_element = json_document.RootElement;
+            if (root_element.ValueKind != JsonValueKind.Object || root_element.TryGetProperty("blocks", out JsonElement blocks_element) is false || blocks_element.ValueKind != JsonValueKind.Array)
+            {
+                return value;
+            }
+
+            List<string> texts = [];
+            foreach (JsonElement block_element in blocks_element.EnumerateArray())
+            {
+                // A block without a string data.text (an image, a divider, a list) adds nothing.
+                if (block_element.ValueKind != JsonValueKind.Object
+                    || block_element.TryGetProperty("data", out JsonElement data_element) is false
+                    || data_element.ValueKind != JsonValueKind.Object
+                    || data_element.TryGetProperty("text", out JsonElement text_element) is false
+                    || text_element.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+
+                texts.Add(text_element.GetString() ?? string.Empty);
+            }
+
+            return string.Join(" ", texts);
+        }
+        catch (JsonException)
+        {
+            return value;
+        }
+    }
+
+    // A version a document can be read by: a non-blank string.
+    private static bool HasVersion(JsonObject document)
+        => document["version"] is JsonValue version && version.TryGetValue(out string? version_text) is true && string.IsNullOrWhiteSpace(version_text) is false;
 
     // The kinds the Editor.js output format gives each field (OutputData / OutputBlockData). Optional fields stay optional,
     // but one that is present must have its kind; null is a value, not an absence.
