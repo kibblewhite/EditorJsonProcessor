@@ -11,7 +11,7 @@ builder.Services.AddHttpClient("tiles", client =>
 .ConfigurePrimaryHttpMessageHandler(() =>
     // ⚠️ DEV / DEMO ONLY — bypasses TLS certificate validation so the tile
     // proxy works in environments where the OS trust store is missing the
-    // intermediate CA for pull-pmtiles.fullevent.io (e.g. corporate proxies
+    // intermediate CA for the upstream tile host (e.g. corporate proxies
     // intercepting HTTPS, locked-down WSL/dev VMs, fresh CI containers).
     //
     // This is acceptable here because:
@@ -39,6 +39,9 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 // Tile proxy — bypasses CORS for the protomaps tile server.
+// Upstream is the Protomaps API on a free, non-commercial key. Pages showing these tiles must credit
+// OpenStreetMap (required) and Protomaps (requested): the map viewer does so on each map, and
+// MainLayout in BlazorApp.Client does so site-wide.
 // Caches tiles in memory so repeated requests (pan back, zoom in/out) are instant.
 ConcurrentDictionary<string, byte[]> tile_cache = new();
 
@@ -58,7 +61,7 @@ app.MapGet("/tiles/{z:int}/{x:int}/{y:int}.mvt", async (int z, int x, int y, Htt
     try
     {
         HttpClient client = http_factory.CreateClient("tiles");
-        byte[] content = await client.GetByteArrayAsync($"https://pull-pmtiles.internal.zone/tiles/{z}/{x}/{y}.mvt");
+        byte[] content = await client.GetByteArrayAsync($"https://api.protomaps.com/tiles/v4/{z}/{x}/{y}.mvt?key=321dc2abf8362740");
 
         // Diagnostic: log size + first-byte signature so we can spot upstream
         // returning gzip ('\x1f\x8b'), empty bodies, or HTML error pages.

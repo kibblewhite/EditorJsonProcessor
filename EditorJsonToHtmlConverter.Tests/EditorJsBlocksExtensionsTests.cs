@@ -182,4 +182,45 @@ public sealed class EditorJsBlocksExtensionsTests
         JsonElement data = json_document.RootElement.GetProperty("blocks")[0].GetProperty("data");
         Assert.HasCount(1, data.EnumerateObject());
     }
+
+    [TestMethod]
+    public void A_document_built_as_authored_content_carries_the_content_version()
+    {
+        EditorJsBlocks? text = JsonSerializer.Deserialize<EditorJsBlocks>(EditorJsBlocksExtensions.TextDocument("A title", TextWrapType.Title, is_authored_content: true));
+        EditorJsBlocks? paragraph = JsonSerializer.Deserialize<EditorJsBlocks>(EditorJsBlocksExtensions.ParagraphDocument("A note", is_authored_content: true));
+
+        Assert.IsNotNull(text);
+        Assert.IsNotNull(paragraph);
+        Assert.AreEqual(EditorJsBlocks.ContentVersion, text.Version);
+        Assert.AreEqual(EditorJsBlocks.ContentVersion, paragraph.Version);
+    }
+
+    [TestMethod]
+    [DataRow(null, DisplayName = "null")]
+    [DataRow("", DisplayName = "empty string")]
+    [DataRow("   ", DisplayName = "whitespace")]
+    [DataRow("""{"time":0,"blocks":[],"version":"0.0.0"}""", DisplayName = "the empty document")]
+    [DataRow("""{"time":5,"blocks":[{"id":"a","type":"paragraph","data":{"text":"Draft: Gala"}}],"version":"0.0.0"}""", DisplayName = "placeholder content")]
+    public void A_blank_value_or_the_template_version_is_a_template(string? value)
+        => Assert.IsTrue(EditorJsBlocksExtensions.IsEmptyTemplate(value));
+
+    [TestMethod]
+    [DataRow("""{"time":1,"blocks":[{"id":"a","type":"paragraph","data":{"text":"x"}}],"version":"2.31.0"}""", DisplayName = "saved by the editor")]
+    [DataRow("""{"time":1,"blocks":[{"id":"a","type":"paragraph","data":{"text":"x"}}],"version":"1.0.0"}""", DisplayName = "built as authored content")]
+    [DataRow("""{"time":1,"blocks":[]}""", DisplayName = "version is missing")]
+    [DataRow("""{"time":1,"blocks":[],"version":0}""", DisplayName = "version is not a string")]
+    [DataRow("""["not","an","object"]""", DisplayName = "an array")]
+    [DataRow("Plain text", DisplayName = "not JSON")]
+    public void Anything_else_is_not_a_template(string value)
+        => Assert.IsFalse(EditorJsBlocksExtensions.IsEmptyTemplate(value));
+
+    [TestMethod]
+    public void The_builders_make_templates_unless_asked_for_authored_content()
+    {
+        Assert.IsTrue(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.EmptyEditorJsString));
+        Assert.IsTrue(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.TextDocument("Draft: Gala", TextWrapType.Title)));
+        Assert.IsTrue(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.ParagraphDocument("Draft: Gala")));
+        Assert.IsFalse(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.TextDocument("Gala", TextWrapType.Title, is_authored_content: true)));
+        Assert.IsFalse(EditorJsBlocksExtensions.IsEmptyTemplate(EditorJsBlocksExtensions.ParagraphDocument("Gala", is_authored_content: true)));
+    }
 }

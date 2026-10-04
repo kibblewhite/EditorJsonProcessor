@@ -350,6 +350,11 @@ string notes_document = EditorJsBlocksExtensions.ParagraphDocument(WebUtility.Ht
 // Is it a document? Checks the envelope unless asked to check further.
 bool is_document = EditorJsBlocksExtensions.IsEditorJsDocument(title_document);                                     // true
 bool will_render = EditorJsBlocksExtensions.IsEditorJsDocument(title_document, EditorJsDocumentCheck.Renderable);  // true
+
+// Built documents are templates (placeholders no one has authored) unless built as authored content.
+string authored_title = EditorJsBlocksExtensions.TextDocument("Opening night", TextWrapType.Title, is_authored_content: true);
+bool title_is_template = EditorJsBlocksExtensions.IsEmptyTemplate(title_document);            // true
+bool authored_is_template = EditorJsBlocksExtensions.IsEmptyTemplate(authored_title);         // false
 ```
 
 `IsEditorJsDocument` checks as far as the `EditorJsDocumentCheck` level asks. Each level includes the checks of the
@@ -375,6 +380,11 @@ No level checks what a block's `data` means (a header's `level` being 1 to 6, sa
 `EditorJsBlock.NewId()` mints a block identifier the way Editor.js does: ten hex characters, taken from the random end
 of a v7 GUID so that blocks created in the same instant do not repeat. Built documents carry
 `EditorJsBlocks.EmptyVersion` (`0.0.0`), which Editor.js replaces with its own version the next time the document is saved.
+
+That version also marks a template: a document with no content, or with placeholder content no one has authored yet, and
+`IsEmptyTemplate` recognises it (a blank value counts too). Pass `is_authored_content: true` to `TextDocument` or
+`ParagraphDocument` when the text is real content; the document then carries `EditorJsBlocks.ContentVersion` (`1.0.0`),
+a fixed value that follows no Editor.js release, and is not a template.
 
 ### `SupportedRenderersLookup`
 

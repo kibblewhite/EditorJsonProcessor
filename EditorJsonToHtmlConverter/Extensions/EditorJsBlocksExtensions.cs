@@ -58,6 +58,36 @@ public static class EditorJsBlocksExtensions
         }
     }
 
+    /// <summary>
+    /// Whether a content field's value is a template: an Editor.js document whose <c>version</c> is
+    /// <see cref="EditorJsBlocks.EmptyVersion"/>, whether it holds no blocks or only placeholder content no one has
+    /// authored. Such a field counts as not authored. A blank value counts as a template; a value that is not a JSON
+    /// object, or has no string <c>version</c>, does not, as <see cref="IsEditorJsDocument"/> refuses it.
+    /// </summary>
+    /// <param name="value">A content field's stored value.</param>
+    /// <returns><see langword="true"/> when the value is blank or carries <see cref="EditorJsBlocks.EmptyVersion"/>.</returns>
+    public static bool IsEmptyTemplate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) is true)
+        {
+            return true;
+        }
+
+        try
+        {
+            using JsonDocument json_document = JsonDocument.Parse(value);
+            JsonElement root_element = json_document.RootElement;
+            return root_element.ValueKind == JsonValueKind.Object
+                && root_element.TryGetProperty("version", out JsonElement version_element) is true
+                && version_element.ValueKind == JsonValueKind.String
+                && version_element.ValueEquals(EditorJsBlocks.EmptyVersion) is true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     // The kinds the Editor.js output format gives each field (OutputData / OutputBlockData). Optional fields stay optional,
     // but one that is present must have its kind; null is a value, not an absence.
     private static bool HasEditorJsStructure(JsonElement root_element, JsonElement blocks_element)
@@ -129,19 +159,25 @@ public static class EditorJsBlocksExtensions
     /// </summary>
     /// <param name="text">The line, as inline HTML.</param>
     /// <param name="wrap">The <c>wrap</c> tag the field's editor is configured with (<c>text</c>, <c>custom</c>, <c>title</c> or <c>synopsis</c>).</param>
+    /// <param name="is_authored_content">
+    /// <see langword="false"/> (the default) builds a template, carrying <see cref="EditorJsBlocks.EmptyVersion"/>, for
+    /// placeholder text no one has authored yet; <see langword="true"/> builds authored content, carrying
+    /// <see cref="EditorJsBlocks.ContentVersion"/>.
+    /// </param>
     /// <returns>The serialised Editor.js document.</returns>
-    public static string TextDocument(string text, string wrap)
-        => SingleBlockDocument(SupportedRenderers.Text.ToBlockType(), new EditorJsBlockData { Text = text, Wrap = wrap });
+    public static string TextDocument(string text, string wrap, bool is_authored_content = false)
+        => SingleBlockDocument(SupportedRenderers.Text.ToBlockType(), new EditorJsBlockData { Text = text, Wrap = wrap }, is_authored_content);
 
     /// <summary>
-    /// Builds the document for a single-line field, as <see cref="TextDocument(string, string)"/> does, taking the
+    /// Builds the document for a single-line field, as <see cref="TextDocument(string, string, bool)"/> does, taking the
     /// <c>wrap</c> tag as a <see cref="TextWrapType"/> so the tag is never retyped.
     /// </summary>
     /// <param name="text">The line, as inline HTML.</param>
     /// <param name="wrap">The <c>wrap</c> tag the field's editor is configured with.</param>
+    /// <param name="is_authored_content">As for <see cref="TextDocument(string, string, bool)"/>: a template by default.</param>
     /// <returns>The serialised Editor.js document.</returns>
-    public static string TextDocument(string text, TextWrapType wrap)
-        => TextDocument(text, wrap.ToWrap());
+    public static string TextDocument(string text, TextWrapType wrap, bool is_authored_content = false)
+        => TextDocument(text, wrap.ToWrap(), is_authored_content);
 
     /// <summary>
     /// Builds the document for a short body — a note, a message: exactly one <c>paragraph</c> block holding the text. The
@@ -149,17 +185,32 @@ public static class EditorJsBlocksExtensions
     /// plain text from a user first so that a <c>&lt;</c> in it reads as a character rather than a tag.
     /// </summary>
     /// <param name="text">The paragraph, as inline HTML.</param>
+    /// <param name="is_authored_content">As for <see cref="TextDocument(string, string, bool)"/>: a template by default.</param>
     /// <returns>The serialised Editor.js document.</returns>
-    public static string ParagraphDocument(string text)
-        => SingleBlockDocument(SupportedRenderers.Paragraph.ToBlockType(), new EditorJsBlockData { Text = text });
+    public static string ParagraphDocument(string text, bool is_authored_content = false)
+        => SingleBlockDocument(SupportedRenderers.Paragraph.ToBlockType(), new EditorJsBlockData { Text = text }, is_authored_content);
 
-    private static string SingleBlockDocument(string type, EditorJsBlockData data)
+    /// <summary>
+    /// Builds and serialises a document holding exactly one block: the shared body of <see cref="TextDocument(string, string, bool)"/>
+    /// and <see cref="ParagraphDocument(string, bool)"/>. The document is stamped with the current time and a fresh block
+    /// identifier, as Editor.js would write it. Its version says whether it is a template: placeholder text no one has
+    /// authored carries <see cref="EditorJsBlocks.EmptyVersion"/>, so a field it fills still counts as not authored until
+    /// someone writes it; authored content carries <see cref="EditorJsBlocks.ContentVersion"/>.
+    /// </summary>
+    /// <param name="type">The block's type, as the Editor.js tool names it (e.g. <c>text</c> or <c>paragraph</c>).</param>
+    /// <param name="data">The block's data, holding only the fields that tool writes; unset fields are left out.</param>
+    /// <param name="is_authored_content">
+    /// <see langword="true"/> when the text is authored content, stamped <see cref="EditorJsBlocks.ContentVersion"/>;
+    /// <see langword="false"/> when it is a template, stamped <see cref="EditorJsBlocks.EmptyVersion"/>.
+    /// </param>
+    /// <returns>The serialised Editor.js document.</returns>
+    private static string SingleBlockDocument(string type, EditorJsBlockData data, bool is_authored_content)
     {
         EditorJsBlocks document = new()
         {
             Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             Blocks = [new EditorJsBlock { Id = EditorJsBlock.NewId(), Type = type, Data = data }],
-            Version = EditorJsBlocks.EmptyVersion
+            Version = is_authored_content is true ? EditorJsBlocks.ContentVersion : EditorJsBlocks.EmptyVersion
         };
 
         return JsonSerializer.Serialize(document, _single_block_document_serializer_options);
