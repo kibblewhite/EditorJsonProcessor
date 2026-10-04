@@ -3,7 +3,7 @@
 public static class EditorJsBlocksExtensions
 {
     // Unset block fields are left out, so a built block carries only the fields its tool writes, as the editor writes it.
-    private static readonly JsonSerializerOptions _single_block_document_serializer_options =new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+    private static readonly JsonSerializerOptions _single_block_document_serializer_options = new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 
     /// <summary>
     /// Gets an empty <see cref="JsonObject"/> instance representing an Editor.js object.
